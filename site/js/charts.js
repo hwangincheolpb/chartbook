@@ -71,6 +71,150 @@ function isEstimateSeries(name) {
 const chartInstances = new Map();  // id → echarts instance
 const chartDataCache = new Map();  // id → parsed chart data
 
+/* =========================================================
+   투 뷰 (데일리 | 전체)
+   - 데일리 = 아침 검증 세트: 스냅샷 → 이선엽 체인 → 밸류밴드 → 스프레드.
+     섹션/접이식 없이 세로 나열 (#daily-view로 카드 DOM 이동).
+   - 전체 = 기존 접이식 섹션 그대로.
+   - 데일리 세트 = index.json daily 시드 + ⭐ localStorage 오버라이드 병합.
+   ========================================================= */
+const VIEW_KEY = 'chartbook_view';                       // 'daily' | 'full'
+const DAILY_OVERRIDES_KEY = 'chartbook_daily_overrides'; // {id: true/false}
+const DAILY_FIRST_SECTION = '이선엽 체인';               // 데일리 정렬: 체인 먼저
+
+let chartMetas = [];          // index.json charts 배열 (원본 순서)
+const dailySeed = new Map();  // chartId → index.json daily 시드
+const cardSlots = new Map();  // chartId → 원위치 마커 (전체 뷰 복귀용)
+
+let dailyOverrides = (() => {
+  try { return JSON.parse(localStorage.getItem(DAILY_OVERRIDES_KEY)) || {}; }
+  catch { return {}; }
+})();
+
+function saveDailyOverrides() {
+  try { localStorage.setItem(DAILY_OVERRIDES_KEY, JSON.stringify(dailyOverrides)); }
+  catch { /* private mode 등 — 무시 */ }
+}
+
+function getView() {
+  return localStorage.getItem(VIEW_KEY) === 'full' ? 'full' : 'daily';  // 기본 = 데일리
+}
+
+function isDailyChart(id) {
+  if (Object.prototype.hasOwnProperty.call(dailyOverrides, id)) return !!dailyOverrides[id];
+  return !!dailySeed.get(id);
+}
+
+/* 데일리 표시 순서: 이선엽 체인 섹션 먼저, 나머지는 index 순서
+   (index 순서상 sp500 → yield_spread → 기타 = 밸류 → 스프레드 순 유지) */
+function dailyChartIds() {
+  const chain = [], rest = [];
+  chartMetas.forEach((m) => {
+    if (m.type === 'link' || !isDailyChart(m.id)) return;
+    (m.section === DAILY_FIRST_SECTION ? chain : rest).push(m.id);
+  });
+  return chain.concat(rest);
+}
+
+/* ---- Lazy render registry — display:none에서 ECharts init하면 width=0.
+       보일 때(ensureRendered) 렌더/리사이즈. 뷰 전환·섹션 펼침 공용. ---- */
+const renderFns = new Map();  // chartId → render fn
+
+function isElVisible(el) {
+  return !!(el && el.offsetParent !== null);
+}
+
+function ensureRendered(chartId) {
+  const el = document.getElementById(chartId + '-chart');
+  if (!el || !isElVisible(el)) return;
+  const inst = chartInstances.get(chartId + '-chart');
+  if (inst) { inst.resize(); return; }
+  const fn = renderFns.get(chartId);
+  if (fn) nextFrame(fn);
+}
+
+/* ---- 카드 원위치 마커 — 데일리 뷰로 이동하기 전에 자리 표시 ---- */
+function ensureCardSlot(card, id) {
+  if (cardSlots.has(id)) return;
+  const slot = document.createElement('div');
+  slot.className = 'daily-slot';
+  slot.style.display = 'none';
+  slot.dataset.for = id;
+  card.parentNode.insertBefore(slot, card);
+  cardSlots.set(id, slot);
+}
+
+/* ---- 데일리 컨테이너에 순서 지키며 삽입 (증분 로드 대응) ---- */
+function insertDailyCardOrdered(dailyEl, card, id) {
+  const order = dailyChartIds();
+  const idx = order.indexOf(id);
+  let before = null;
+  for (const child of dailyEl.children) {
+    const cid = (child.id || '').replace(/^card-/, '');
+    if (order.indexOf(cid) > idx) { before = child; break; }
+  }
+  dailyEl.insertBefore(card, before);
+}
+
+/* ---- 뷰 적용 — 탭 상태 + 카드 배치 + lazy render ---- */
+function applyView(view) {
+  try { localStorage.setItem(VIEW_KEY, view); } catch { /* 무시 */ }
+  document.body.classList.toggle('view-daily', view === 'daily');
+  document.querySelectorAll('.view-tab').forEach((btn) => {
+    const on = btn.dataset.view === view;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+
+  const dailyEl = document.getElementById('daily-view');
+  if (!dailyEl) return;
+
+  // 1) 데일리 컨테이너의 카드 전부 원위치(슬롯)로 복귀 — 멱등 재배치
+  [...dailyEl.children].forEach((card) => {
+    const id = (card.id || '').replace(/^card-/, '');
+    const slot = cardSlots.get(id);
+    if (slot && slot.parentNode) slot.parentNode.insertBefore(card, slot);
+    else card.remove();  // 슬롯 소실 방어 (정상 흐름에선 없음)
+  });
+
+  if (view === 'daily') {
+    // 2) 현재 데일리 세트를 검증 순서대로 이동
+    dailyChartIds().forEach((id) => {
+      const card = document.getElementById('card-' + id);
+      if (!card) return;  // not-ready placeholder 등 — 스킵
+      ensureCardSlot(card, id);
+      dailyEl.appendChild(card);
+    });
+    nextFrame(() => dailyChartIds().forEach(ensureRendered));
+  } else {
+    // 전체 뷰 — 펼쳐진 섹션 차트 lazy-init + 폭 보정
+    nextFrame(() => {
+      chartMetas.forEach((m) => { if (m.type !== 'link') ensureRendered(m.id); });
+    });
+  }
+}
+
+/* ---- ⭐ 데일리 포함/제외 토글 ---- */
+function updateStarButton(id) {
+  const btn = document.querySelector(`.daily-star[data-chart-id="${CSS.escape(id)}"]`);
+  if (!btn) return;
+  const on = isDailyChart(id);
+  btn.classList.toggle('active', on);
+  btn.textContent = on ? '★' : '☆';
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  btn.title = on ? '데일리 뷰에서 제외' : '데일리 뷰에 추가';
+}
+
+function toggleDailyStar(id) {
+  const next = !isDailyChart(id);
+  // 시드와 같아지면 오버라이드 삭제 (저장소 청결 유지)
+  if (!!dailySeed.get(id) === next) delete dailyOverrides[id];
+  else dailyOverrides[id] = next;
+  saveDailyOverrides();
+  updateStarButton(id);
+  if (getView() === 'daily') applyView('daily');  // 세트 변경 즉시 반영
+}
+
 /* ---- rAF + setTimeout 레이스 — 숨겨진 탭에서는 rAF가 영원히 안 불림
        (백그라운드 탭으로 열어두는 아침 사용 패턴 대응). 둘 중 먼저 온 쪽 1회 실행 ---- */
 function nextFrame(fn) {
@@ -574,11 +718,10 @@ const sectionHeaders = new Map();  // sectionName → header element
 
 /* ---- Collapsible sections — 접힘 상태 (localStorage 기억) ----
    기본값: "이선엽 체인"만 펼침, 나머지 접힘 ("아침 10초 확인" 구조).
-   ECharts는 display:none에서 init하면 width=0 → 접힌 섹션의 차트는
-   pendingRenders에 쌓아 두고 펼칠 때 lazy-init한다. */
+   접힌 섹션(display:none)의 차트는 renderFns에 등록만 하고
+   펼칠 때 ensureRendered로 lazy-init한다 (데일리 뷰 이동 시에도 공용). */
 const SECTIONS_KEY = 'chartbook_sections_v1';
 const DEFAULT_EXPANDED = new Set(['이선엽 체인']);
-const pendingRenders = new Map();  // sectionName → [renderFn, ...]
 
 let sectionState = (() => {
   try { return JSON.parse(localStorage.getItem(SECTIONS_KEY)) || {}; }
@@ -594,18 +737,6 @@ function isSectionExpanded(name) {
   return name in sectionState ? !!sectionState[name] : DEFAULT_EXPANDED.has(name);
 }
 
-function queuePendingRender(sectionName, fn) {
-  if (!pendingRenders.has(sectionName)) pendingRenders.set(sectionName, []);
-  pendingRenders.get(sectionName).push(fn);
-}
-
-function flushPendingRenders(sectionName) {
-  const fns = pendingRenders.get(sectionName);
-  if (!fns || !fns.length) return;
-  pendingRenders.set(sectionName, []);
-  fns.forEach(fn => nextFrame(fn));
-}
-
 function expandSection(name) {
   const body = sectionBodies.get(name);
   const header = sectionHeaders.get(name);
@@ -615,11 +746,10 @@ function expandSection(name) {
   sectionState[name] = 1;
   saveSectionState();
   // 접힌 채로 대기하던 차트 lazy-init + 이미 그려진 차트 폭 보정
-  flushPendingRenders(name);
   nextFrame(() => {
-    body.querySelectorAll('.chart-body').forEach(el => {
-      const inst = chartInstances.get(el.id);
-      if (inst) inst.resize();
+    body.querySelectorAll('.chart-card').forEach(card => {
+      const id = (card.id || '').replace(/^card-/, '');
+      if (id) ensureRendered(id);
     });
   });
 }
@@ -707,16 +837,24 @@ function snapCardHtml(card) {
     </div>`;
 }
 
-/* 스냅샷 카드 클릭 → (접힌 섹션이면 펼치고) 해당 차트로 스크롤 + 하이라이트 */
+/* 스냅샷 카드 클릭 → (접힌 섹션이면 펼치고) 해당 차트로 스크롤 + 하이라이트.
+   데일리 뷰에서 타깃이 데일리 세트 밖이면 전체 뷰로 전환 후 이동. */
 function gotoChartAnchor(link) {
   if (!link) return;
   const target = document.querySelector(link);
   if (!target) return;
-  // 카드가 속한 섹션 찾기 → 접혀 있으면 펼침
-  for (const [name, body] of sectionBodies) {
-    if (body.contains(target)) {
-      if (body.classList.contains('collapsed')) expandSection(name);
-      break;
+  const dailyEl = document.getElementById('daily-view');
+  if (document.body.classList.contains('view-daily') &&
+      !(dailyEl && dailyEl.contains(target))) {
+    applyView('full');
+  }
+  if (!document.body.classList.contains('view-daily')) {
+    // 카드가 속한 섹션 찾기 → 접혀 있으면 펼침 (전체 뷰에서만 의미)
+    for (const [name, body] of sectionBodies) {
+      if (body.contains(target)) {
+        if (body.classList.contains('collapsed')) expandSection(name);
+        break;
+      }
     }
   }
   nextFrame(() => {
@@ -750,6 +888,84 @@ async function renderSnapshotBoard() {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); gotoChartAnchor(link); }
     });
   });
+}
+
+/* ---- 📅 이번 주 캘린더 카드 (data/calendar.json) ----
+   아침 검증 ⑥ "오늘/이번 주 촉매가 뭔가" — 지표/실적/회의 이벤트를
+   날짜별 그룹 + D-day 배지(오늘=🔴, 내일=🟡)로 표시.
+   파일 없으면 카드 숨김, 이벤트 0개면 "이번 주 주요 촉매 없음". ---- */
+const CAL_TYPE_ICON = { '지표': '📊', '실적': '💰', '회의': '🏛️' };
+const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
+
+function calDayDiff(isoDate) {
+  // 'YYYY-MM-DD' → 사용자 로컬 자정 기준 오늘과의 일수 차
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const target = new Date(y, m - 1, d);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target - today) / 86400000);
+}
+
+function calDdayBadge(diff) {
+  if (diff === 0) return '<span class="cal-dday today">🔴 오늘</span>';
+  if (diff === 1) return '<span class="cal-dday tomorrow">🟡 내일</span>';
+  return `<span class="cal-dday">D-${diff}</span>`;
+}
+
+function calEventHtml(ev) {
+  const icon = CAL_TYPE_ICON[ev.type] || '·';
+  const imp = ev.importance === 'high' ? ' imp-high' : '';
+  const ticker = ev.ticker ? `<span class="cal-ticker">${escapeHtml(ev.ticker)}</span>` : '';
+  return `<span class="cal-ev${imp}" title="${escapeHtml(ev.type)}">` +
+         `<span class="cal-ev-icon" aria-hidden="true">${icon}</span>` +
+         `${escapeHtml(ev.label)}${ticker}</span>`;
+}
+
+async function renderCalendarCard() {
+  const el = document.getElementById('calendar-card');
+  if (!el) return;
+  let cal;
+  try {
+    const resp = await fetch('../data/calendar.json', { cache: 'no-store' });
+    if (!resp.ok) return;  // calendar 없음 → 카드 숨김
+    cal = await resp.json();
+  } catch (e) {
+    console.warn('calendar.json 로드 실패 (카드 생략):', e);
+    return;
+  }
+
+  // 날짜별 그룹 (과거 이벤트는 파이프라인이 이미 제외하지만 방어적으로 한 번 더)
+  const events = (cal.events || []).filter(ev => ev.date && calDayDiff(ev.date) >= 0);
+  const byDate = new Map();
+  events.forEach(ev => {
+    if (!byDate.has(ev.date)) byDate.set(ev.date, []);
+    byDate.get(ev.date).push(ev);
+  });
+
+  let bodyHtml;
+  if (!byDate.size) {
+    bodyHtml = '<div class="cal-empty">이번 주 주요 촉매 없음</div>';
+  } else {
+    bodyHtml = [...byDate.keys()].sort().map(dateStr => {
+      const diff = calDayDiff(dateStr);
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const wd = WEEKDAYS_KO[new Date(y, m - 1, d).getDay()];
+      const rowCls = diff === 0 ? ' is-today' : (diff === 1 ? ' is-tomorrow' : '');
+      return `<div class="cal-day${rowCls}">
+        <div class="cal-date">${calDdayBadge(diff)}<span class="cal-date-label">${m}/${d} (${wd})</span></div>
+        <div class="cal-events">${byDate.get(dateStr).map(calEventHtml).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  el.innerHTML = `
+    <div class="cal-head">
+      <span class="cal-title">📅 이번 주</span>
+      <span class="cal-legend">🏛️ 회의 · 📊 지표 · 💰 실적</span>
+      <span class="cal-range">+14일</span>
+    </div>
+    ${bodyHtml}`;
+  el.classList.add('has-data');
 }
 
 /* ---- Create chart card DOM ---- */
@@ -786,7 +1002,11 @@ function createChartCard(meta, chartData) {
       ).join('')}</div>`
     : '';
 
+  const dailyOn = isDailyChart(meta.id);
   card.innerHTML = `
+    <button class="daily-star${dailyOn ? ' active' : ''}" data-chart-id="${escapeHtml(meta.id)}"
+            aria-pressed="${dailyOn ? 'true' : 'false'}"
+            title="${dailyOn ? '데일리 뷰에서 제외' : '데일리 뷰에 추가'}">${dailyOn ? '★' : '☆'}</button>
     <div class="chart-header">
       <div class="chart-title">${escapeHtml(title)}</div>
       ${subtitle ? `<div class="chart-subtitle">${escapeHtml(subtitle)}</div>` : ''}
@@ -798,6 +1018,14 @@ function createChartCard(meta, chartData) {
     </div>
     ${footnoteHtml}
   `;
+
+  const starBtn = card.querySelector('.daily-star');
+  if (starBtn) {
+    starBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDailyStar(meta.id);
+    });
+  }
 
   return card;
 }
@@ -907,8 +1135,12 @@ async function init() {
   // Apply persisted theme immediately
   applyTheme(getTheme());
 
-  // 스냅샷 보드 (병렬 — 차트 로드와 독립, 실패해도 본문 렌더에 영향 없음)
+  // 저장된 뷰(기본 데일리) 즉시 적용 — 섹션/미니목차 노출 플래시 방지
+  applyView(getView());
+
+  // 스냅샷 보드 + 캘린더 카드 (병렬 — 차트 로드와 독립, 실패해도 본문 렌더에 영향 없음)
   renderSnapshotBoard();
+  renderCalendarCard();
 
   const loadingEl = document.getElementById('loading');
   const errorEl   = document.getElementById('error-msg');
@@ -925,6 +1157,12 @@ async function init() {
     if (updatedEl && index.updated) {
       updatedEl.textContent = fmtDate(index.updated);
     }
+
+    // 투 뷰 재료: 차트 메타(순서) + daily 시드
+    chartMetas = index.charts || [];
+    chartMetas.forEach(c => {
+      if (c.type !== 'link') dailySeed.set(c.id, !!c.daily);
+    });
 
     // Build section nav (first-appearance order)
     const sections = index.charts.map(c => c.section);
@@ -971,27 +1209,37 @@ async function init() {
       const card = createChartCard(meta, chartData);
       sectionBody.appendChild(card);
 
-      // Render chart (after DOM insertion so sizes are available).
-      // 접힌 섹션(display:none)에서 ECharts init하면 width=0 →
-      // 접혀 있으면 pendingRenders에 쌓고 펼칠 때 lazy-init.
-      const collapsed = sectionBody.classList.contains('collapsed');
+      // 데일리 뷰 중이면 데일리 카드는 즉시 #daily-view로 이동 (증분 표시)
+      const dailyEl = document.getElementById('daily-view');
+      if (getView() === 'daily' && isDailyChart(meta.id) && dailyEl) {
+        ensureCardSlot(card, meta.id);
+        insertDailyCardOrdered(dailyEl, card, meta.id);
+      }
+
+      // Render 등록 (after DOM insertion so sizes are available).
+      // display:none(접힌 섹션/숨긴 뷰)에서 ECharts init하면 width=0 →
+      // renderFns에 등록 후 ensureRendered가 보일 때 lazy-init.
       if (meta.type === 'timeseries') {
-        const renderFn = () => renderTimeseries(meta.id + '-chart', chartData);
-        if (collapsed) queuePendingRender(meta.section, renderFn);
-        else nextFrame(renderFn);
+        renderFns.set(meta.id, () => renderTimeseries(meta.id + '-chart', chartData));
+        ensureRendered(meta.id);
       } else if (meta.type === 'curve_snapshot') {
-        const renderFn = () => renderCurveSnapshot(meta.id + '-chart', chartData);
-        if (collapsed) queuePendingRender(meta.section, renderFn);
-        else nextFrame(renderFn);
+        renderFns.set(meta.id, () => renderCurveSnapshot(meta.id + '-chart', chartData));
+        ensureRendered(meta.id);
       } else if (meta.type === 'heatmap_perf') {
         // HTML 테이블 — 숨겨진 상태에서도 렌더 무해
         renderHeatmapPerf(meta.id + '-body', chartData);
       }
     }
 
-    // 3. Window resize → resize all ECharts
+    // 카드 전부 배치 후 뷰 최종 정리 (데일리 순서 보정 + lazy render)
+    applyView(getView());
+
+    // 3. Window resize → resize visible ECharts (숨긴 뷰/접힌 섹션은
+    //    width=0으로 리사이즈되면 차트가 사라지므로 보이는 것만)
     window.addEventListener('resize', () => {
-      chartInstances.forEach(instance => instance.resize());
+      chartInstances.forEach((instance, cid) => {
+        if (isElVisible(document.getElementById(cid))) instance.resize();
+      });
     });
 
   } catch (err) {
@@ -1005,8 +1253,11 @@ async function init() {
 // Boot
 document.addEventListener('DOMContentLoaded', init);
 
-// Theme toggle button
+// Theme toggle button + view tabs
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('theme-toggle');
   if (btn) btn.addEventListener('click', toggleTheme);
+  document.querySelectorAll('.view-tab').forEach((tab) => {
+    tab.addEventListener('click', () => applyView(tab.dataset.view));
+  });
 });

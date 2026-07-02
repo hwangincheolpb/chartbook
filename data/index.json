@@ -1,166 +1,189 @@
 {
-  "updated": "2026-07-02T12:13:38+09:00",
+  "updated": "2026-07-03T06:30:00+09:00",
   "charts": [
     {
       "id": "sp500",
       "file": "sp500.json",
       "type": "timeseries",
       "section": "주식시장",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "kospi",
       "file": "kospi.json",
       "type": "timeseries",
       "section": "한국",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "vix",
       "file": "vix.json",
       "type": "timeseries",
       "section": "리스크",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "sectors",
       "file": "sectors.json",
       "type": "heatmap_perf",
       "section": "섹터",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "valuation_pe",
       "file": "valuation_pe.json",
       "type": "timeseries",
       "section": "밸류에이션",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "sp500_eps",
       "file": "sp500_eps.json",
       "type": "timeseries",
       "section": "밸류에이션",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "buffett",
       "file": "buffett.json",
       "type": "timeseries",
       "section": "밸류에이션",
-      "ready": false
+      "ready": false,
+      "daily": false
     },
     {
       "id": "ls_rate_peak",
       "file": "ls_rate_peak.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "ls_semi_vs_power",
       "file": "ls_semi_vs_power.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "ls_memory_cycle",
       "file": "ls_memory_cycle.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "ls_taiwan_hedge",
       "file": "ls_taiwan_hedge.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "ls_ship_defense",
       "file": "ls_ship_defense.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "move_index",
       "file": "move_index.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "ust_yields",
       "file": "ust_yields.json",
       "type": "timeseries",
       "section": "채권/금리",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "yield_spread",
       "file": "yield_spread.json",
       "type": "timeseries",
       "section": "채권/금리",
-      "ready": true
+      "ready": true,
+      "daily": true
     },
     {
       "id": "yield_curve",
       "file": "yield_curve.json",
       "type": "curve_snapshot",
       "section": "채권/금리",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "credit_proxy",
       "file": "credit_proxy.json",
       "type": "timeseries",
       "section": "채권/금리",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "credit_hy_oas",
       "file": "credit_hy_oas.json",
       "type": "timeseries",
       "section": "채권/금리",
-      "ready": false
+      "ready": false,
+      "daily": false
     },
     {
       "id": "usdkrw",
       "file": "usdkrw.json",
       "type": "timeseries",
       "section": "환율",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "dxy",
       "file": "dxy.json",
       "type": "timeseries",
       "section": "환율",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "gold",
       "file": "gold.json",
       "type": "timeseries",
       "section": "원자재",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "wti",
       "file": "wti.json",
       "type": "timeseries",
       "section": "원자재",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "copper",
       "file": "copper.json",
       "type": "timeseries",
       "section": "원자재",
-      "ready": true
+      "ready": true,
+      "daily": false
     },
     {
       "id": "megaprojects_reconstructed",

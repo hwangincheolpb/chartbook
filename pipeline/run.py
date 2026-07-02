@@ -90,8 +90,11 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
     CONTRACT.md 정의 순서: 주식시장 → 밸류에이션 → 섹터 → 리스크 → 한국
     """
     # 차트 메타 정의 (순서 고정)
+    # daily: True → 사이트 "데일리" 뷰 기본 포함 (아침 검증 세트:
+    # 이선엽 체인 6개 + sp500 밸류밴드 + yield_spread).
+    # 사용자가 사이트 ⭐로 localStorage 오버라이드 가능 — 여긴 시드만.
     chart_meta = [
-        {"id": "sp500",        "file": "sp500.json",        "type": "timeseries",   "section": "주식시장"},
+        {"id": "sp500",        "file": "sp500.json",        "type": "timeseries",   "section": "주식시장", "daily": True},
         {"id": "kospi",        "file": "kospi.json",        "type": "timeseries",   "section": "한국"},
         {"id": "vix",          "file": "vix.json",          "type": "timeseries",   "section": "리스크"},
         {"id": "sectors",      "file": "sectors.json",      "type": "heatmap_perf", "section": "섹터"},
@@ -99,15 +102,15 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
         {"id": "sp500_eps",    "file": "sp500_eps.json",    "type": "timeseries",   "section": "밸류에이션"},
         {"id": "buffett",      "file": "buffett.json",      "type": "timeseries",   "section": "밸류에이션"},
         # ─── 이선엽 체인 (framework §7 논지 체인, 채권/금리 앞 배치) ─
-        {"id": "ls_rate_peak",     "file": "ls_rate_peak.json",     "type": "timeseries", "section": "이선엽 체인"},
-        {"id": "ls_semi_vs_power", "file": "ls_semi_vs_power.json", "type": "timeseries", "section": "이선엽 체인"},
-        {"id": "ls_memory_cycle",  "file": "ls_memory_cycle.json",  "type": "timeseries", "section": "이선엽 체인"},
-        {"id": "ls_taiwan_hedge",  "file": "ls_taiwan_hedge.json",  "type": "timeseries", "section": "이선엽 체인"},
-        {"id": "ls_ship_defense",  "file": "ls_ship_defense.json",  "type": "timeseries", "section": "이선엽 체인"},
-        {"id": "move_index",       "file": "move_index.json",       "type": "timeseries", "section": "이선엽 체인"},
+        {"id": "ls_rate_peak",     "file": "ls_rate_peak.json",     "type": "timeseries", "section": "이선엽 체인", "daily": True},
+        {"id": "ls_semi_vs_power", "file": "ls_semi_vs_power.json", "type": "timeseries", "section": "이선엽 체인", "daily": True},
+        {"id": "ls_memory_cycle",  "file": "ls_memory_cycle.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True},
+        {"id": "ls_taiwan_hedge",  "file": "ls_taiwan_hedge.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True},
+        {"id": "ls_ship_defense",  "file": "ls_ship_defense.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True},
+        {"id": "move_index",       "file": "move_index.json",       "type": "timeseries", "section": "이선엽 체인", "daily": True},
         # ─── 채권/금리 (기존 차트 뒤에 추가) ───────────────────
         {"id": "ust_yields",   "file": "ust_yields.json",   "type": "timeseries",     "section": "채권/금리"},
-        {"id": "yield_spread", "file": "yield_spread.json", "type": "timeseries",     "section": "채권/금리"},
+        {"id": "yield_spread", "file": "yield_spread.json", "type": "timeseries",     "section": "채권/금리", "daily": True},
         {"id": "yield_curve",  "file": "yield_curve.json",  "type": "curve_snapshot", "section": "채권/금리"},
         {"id": "credit_proxy", "file": "credit_proxy.json", "type": "timeseries",     "section": "채권/금리"},
         {"id": "credit_hy_oas","file": "credit_hy_oas.json","type": "timeseries",     "section": "채권/금리"},
@@ -133,6 +136,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
             "type": meta["type"],
             "section": meta["section"],
             "ready": ready,
+            "daily": bool(meta.get("daily", False)),
         })
 
     # 파이프라인 소유가 아닌 기존 차트 전부 보존(매 실행 유지).
@@ -151,7 +155,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
             if c.get("type") == "link":
                 link_by_id[cid] = c
             else:
-                extra_charts.append(c)  # 도구/스킬 등록 차트 그대로 보존
+                extra_charts.append(c)  # 도구/스킬 등록 차트 그대로 보존 (daily 필드 포함)
     except Exception:
         pass
     charts.extend(extra_charts)
@@ -392,6 +396,26 @@ def build_snapshot(now: str) -> dict[str, Any]:
     return {"updated": now, "cards": cards}
 
 
+# ─────────────────────────────────────────────────────────────
+# 캘린더 (data/calendar.json) — "이번 주 일정+실적" 카드 (아침 검증 ⑥).
+# A. 경제지표/회의 = pipeline/econ_calendar_*.json (정적 연간 일정, 연 1회 채록)
+# B. 관심종목 실적 = yfinance (실패 종목 skip)
+# 오늘부터 +14일 이벤트만. 규격은 CONTRACT.md "calendar.json" 참조.
+# ─────────────────────────────────────────────────────────────
+
+def build_calendar(now: str) -> dict[str, Any]:
+    try:
+        from fetch_calendar import fetch_calendar_events
+    except ImportError:
+        sys.path.insert(0, str(PIPELINE_DIR))
+        from fetch_calendar import fetch_calendar_events
+
+    result = fetch_calendar_events()
+    if result["earnings_skip"]:
+        logger.info(f"[CALENDAR] 실적일 미확보 skip: {', '.join(result['earnings_skip'])}")
+    return {"updated": now, "events": result["events"]}
+
+
 def run() -> None:
     now = _now_kst()
     logger.info(f"=== Chartbook 파이프라인 시작 ({now}) ===")
@@ -520,6 +544,15 @@ def run() -> None:
         logger.info(f"[OK] snapshot.json ({len(snapshot['cards'])}카드) → {snapshot_path}")
     except Exception as e:
         logger.error(f"[FAIL] snapshot.json: {e}")
+
+    # ─── calendar.json 생성 (이번 주 일정+실적 카드) ────────────
+    try:
+        calendar = build_calendar(now)
+        calendar_path = DATA_DIR / "calendar.json"
+        write_json(calendar_path, calendar)
+        logger.info(f"[OK] calendar.json ({len(calendar['events'])}이벤트) → {calendar_path}")
+    except Exception as e:
+        logger.error(f"[FAIL] calendar.json: {e}")
 
     # ─── 결과 요약 출력 ──────────────────────────────────────────
     print("\n" + "=" * 60)

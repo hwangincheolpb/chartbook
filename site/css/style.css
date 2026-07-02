@@ -206,6 +206,73 @@ body {
   color: var(--accent);
 }
 
+/* ---- View tabs (데일리 | 전체) — 세그먼트 컨트롤 ---- */
+#view-tabs {
+  flex-shrink: 0;
+  display: flex;
+  gap: 2px;
+  background: var(--section-bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 2px;
+}
+
+.view-tab {
+  border: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 3px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.view-tab:hover { color: var(--text-primary); }
+.view-tab.active {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+
+/* ---- 데일리 뷰 — 섹션/미니목차 숨기고 데일리 카드만 세로 나열 ---- */
+#daily-view { display: none; }
+body.view-daily #daily-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+body.view-daily .section-header,
+body.view-daily .section-body { display: none; }
+body.view-daily #header-nav { visibility: hidden; }  /* 미니목차 = 전체 뷰 전용 (자리 유지) */
+
+/* ---- ⭐ 데일리 포함 토글 (차트 카드 우상단) ---- */
+.daily-star {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+  border: 0;
+  background: none;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: 6px;
+  transition: color 0.15s, transform 0.1s;
+}
+.daily-star:hover { color: var(--accent); transform: scale(1.15); }
+.daily-star.active { color: #d97706; }
+[data-theme="dark"] .daily-star.active { color: #facc15; }
+.daily-star:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* Intake mount point (js/intake.js가 채움 — 비어 있으면 자리 차지 안 함) */
 #intake-root {
   flex-shrink: 0;
@@ -348,6 +415,122 @@ body {
   color: var(--text-muted);
 }
 
+/* ---- 📅 이번 주 캘린더 카드 (data/calendar.json) ---- */
+#calendar-card {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+#calendar-card.has-data { display: block; }
+
+.cal-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.cal-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+.cal-legend {
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+.cal-range {
+  margin-left: auto;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 0 2px;
+}
+
+.cal-day {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+.cal-day.is-today    { background: color-mix(in srgb, #dc2626 5%, transparent); border-radius: 6px; padding-left: 6px; padding-right: 6px; margin: 0 -6px; }
+.cal-day.is-tomorrow { background: color-mix(in srgb, #d97706 5%, transparent); border-radius: 6px; padding-left: 6px; padding-right: 6px; margin: 0 -6px; }
+
+.cal-date {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 128px;
+}
+.cal-dday {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 9px;
+  background: var(--ph-bg);
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.cal-dday.today    { background: #fee2e2; color: #b91c1c; }
+.cal-dday.tomorrow { background: #fef3c7; color: #a16207; }
+[data-theme="dark"] .cal-dday.today    { background: #450a0a; color: #fca5a5; }
+[data-theme="dark"] .cal-dday.tomorrow { background: #46350a; color: #fcd34d; }
+
+.cal-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cal-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.cal-ev {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.cal-ev.imp-high {
+  font-weight: 600;
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+.cal-ev-icon { font-size: 10.5px; }
+.cal-ticker {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .cal-day { flex-direction: column; gap: 4px; }
+  .cal-date { min-width: 0; }
+}
+
 /* 스냅샷 카드 클릭 → 차트 이동 시 잠깐 하이라이트 */
 .chart-card, .link-card, .placeholder-card { scroll-margin-top: 70px; }
 .anchor-highlight {
@@ -428,6 +611,7 @@ body {
 
 /* ---- Chart Card ---- */
 .chart-card {
+  position: relative;   /* ⭐ 토글 absolute 기준 */
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -441,6 +625,7 @@ body {
 
 .chart-header {
   margin-bottom: 12px;
+  padding-right: 32px;   /* ⭐ 버튼과 제목 겹침 방지 */
 }
 
 .chart-title {

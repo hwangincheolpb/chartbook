@@ -117,6 +117,36 @@ data/
 | copper_gold | copper (구리/금 시리즈) | 최신값 | neutral, badge=3개월 방향 화살표(↑/→/↓), caption에 3개월 % |
 | credit      | credit_proxy           | HYG/LQD 최신값 | 3개월 −2% 이하 스트레스=warn / 그 외 정온=good |
 
+## calendar.json (이번 주 일정+실적 카드) — 규격 확장(파괴 아님)
+
+아침 검증 ⑥ "오늘/이번 주 촉매" 카드. 파이프라인(`run.py build_calendar()` → `pipeline/fetch_calendar.py`)이
+**오늘부터 +14일** 이벤트만 `data/calendar.json`으로 저장. 프론트는 스냅샷 보드 바로 아래
+`#calendar-card`에 렌더 (데일리/전체 뷰 공통 노출). 파일 없으면 카드 숨김, `events`가 비면 "이번 주 주요 촉매 없음".
+
+```json
+{
+  "updated": "2026-07-02T13:54:29+09:00",
+  "events": [
+    { "date": "2026-07-14", "type": "지표", "label": "미 CPI (6월분)", "importance": "high" },
+    { "date": "2026-07-16", "type": "회의", "label": "한은 금통위 (기준금리)", "importance": "high" },
+    { "date": "2026-07-16", "type": "실적", "label": "TSMC 실적", "ticker": "TSM", "importance": "high" }
+  ]
+}
+```
+
+- `date`: `YYYY-MM-DD` (발표 주체의 현지일. FOMC는 이틀 회의 중 결정 발표일=2일차).
+- `type`: `"지표"`(📊) | `"실적"`(💰) | `"회의"`(🏛️) — 프론트 아이콘 구분.
+- `ticker`: 실적 이벤트에만 존재.
+- `importance`: `"high"` | `"mid"` — high는 굵게 강조.
+- 정렬: 날짜 → 중요도 → 타입(회의→지표→실적). 프론트는 날짜별 그룹 + D-day 배지(오늘=🔴, 내일=🟡).
+
+### 소스 (키 불필요)
+
+| 종류 | 소스 | 방식 |
+|------|------|------|
+| 경제지표/회의 (FOMC·CPI·NFP·PCE·GDP·금통위) | `pipeline/econ_calendar_2026.json` | **정적 연간 일정, 연 1회 채록** (매년 12월 이듬해 파일 추가 — `econ_calendar_*.json` 전부 자동 로드). 출처/채록일은 파일 내 `sources` 필드 |
+| 관심종목 실적 | yfinance `get_earnings_dates` (폴백 `Ticker.calendar`) | 매 실행 조회. 워치리스트 = `fetch_calendar.py EARNINGS_WATCHLIST` (이선엽 체인 15종목). 실패/미제공 종목은 skip. **yfinance 어닝일은 확정 전 추정치일 수 있음** |
+
 ## type: "heatmap_perf" (섹터 퍼포먼스)
 
 ```json
