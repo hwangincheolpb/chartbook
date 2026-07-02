@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Label (reverse-DNS, unique per agent) -->
+    <key>Label</key>
+    <string>com.user.chartbook</string>
+
+    <!-- 실행할 커맨드 (절대 경로) -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/ai/workspace/dev/chartbook/scripts/update.sh</string>
+    </array>
+
+    <!-- 작업 디렉토리 -->
+    <key>WorkingDirectory</key>
+    <string>/Users/ai/workspace/dev/chartbook</string>
+
+    <!-- 매일 06:30 실행 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <!-- launchctl load 즉시 1회 실행 -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- 표준 출력 / 표준 오류 → logs/ 에 기록 -->
+    <key>StandardOutPath</key>
+    <string>/Users/ai/workspace/dev/chartbook/logs/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/ai/workspace/dev/chartbook/logs/launchd.err.log</string>
+
+    <!-- 비정상 종료 시 재시도 안 함 (update.sh 내부에서 오류 기록) -->
+    <key>ThrottleInterval</key>
+    <integer>3600</integer>
+</dict>
+</plist>

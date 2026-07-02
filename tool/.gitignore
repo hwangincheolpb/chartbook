@@ -1,0 +1,15 @@
+# 환경변수 (절대 커밋 금지)
+.env
+
+# 가상환경
+.venv/
+
+# 파이썬 캐시
+__pycache__/
+*.py[cod]
+
+# fetch 원시 캐시 (상위 data/cache는 상위 .gitignore에서 관리될 수 있음)
+cache/
+
+# macOS
+.DS_Store

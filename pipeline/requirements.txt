@@ -1,0 +1,6 @@
+yfinance>=0.2.40
+pandas>=2.0.0
+requests>=2.31.0
+pyyaml>=6.0
+pytz>=2024.1
+lxml>=5.0          # multpl.com HTML 테이블 파싱 (pandas.read_html 백업용)

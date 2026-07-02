@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>신한 PB 차트북</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root {
+    --navy: #0A2D7C;
+    --navy-dark: #07235f;
+    --cream: #FBFAF2;
+    --frame: #1A1A1A;
+    --grid: #E0DDD0;
+    --blue: #0033CC;
+    --red: #CC2222;
+    --ink: #1A1A1A;
+    --muted: #6b6b6b;
+    --card-bg: #ffffff;
+    --page-bg: #eef0f4;
+    --serif: Georgia, "Times New Roman", "Apple SD Gothic Neo", serif;
+    --sans: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--page-bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Header ---------- */
+  header.topbar {
+    background: var(--navy);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header.topbar .title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #fff;
+    cursor: pointer;
+  }
+  header.topbar .asof {
+    font-size: 13px;
+    color: #cdd7ee;
+  }
+
+  /* ---------- Layout ---------- */
+  main {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 22px 24px 40px;
+    min-height: calc(100vh - 130px);
+  }
+  .subhead {
+    font-size: 15px;
+    color: var(--muted);
+    margin: 4px 0 22px;
+  }
+  .page-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 7px 13px;
+    font-size: 14px;
+    color: var(--navy);
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: background .15s, box-shadow .15s;
+  }
+  .back-btn:hover { background: #f3f5fa; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .page-title { font-size: 22px; font-weight: 700; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* ---------- Tile grid ---------- */
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+  .tile {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(10,45,124,0.08);
+    padding: 16px;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+    border: 1px solid #e7e9ef;
+    outline: none;
+  }
+  .tile:hover, .tile:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(10,45,124,0.16);
+  }
+  .tile:focus-visible { border-color: var(--navy); }
+  .tile.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    filter: grayscale(0.6);
+  }
+  .tile.disabled:hover { transform: none; box-shadow: 0 1px 4px rgba(10,45,124,0.08); }
+  .tile .tile-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .tile .badge {
+    display: inline-block;
+    background: var(--navy);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .tile .badge.gray { background: #9aa0ad; }
+  .tile .spark-box {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    background: var(--cream);
+    border: 1px solid var(--frame);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .tile .spark-box canvas { position:absolute; inset:0; }
+  .spark-ph {
+    width: 100%; height: 80px; background: var(--cream);
+    border: 1px solid var(--frame); border-radius: 4px;
+    display:flex; align-items:center; justify-content:center; color:#aaa; font-size:13px;
+  }
+  .tile .tile-desc { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  /* sector tile extras */
+  .sector-meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .minibar-wrap { flex: 1; }
+  .minibar-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; display:flex; justify-content:space-between;}
+  .minibar-track { height: 10px; background: #eceef3; border-radius: 5px; overflow: hidden; }
+  .minibar-fill { height: 100%; background: linear-gradient(90deg, #0A2D7C, #2f5fd0); }
+
+  /* ---------- Chart cards ---------- */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 20px;
+  }
+  .chart-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(10,45,124,0.08);
+    padding: 14px;
+    border: 1px solid #e7e9ef;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .chart-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(10,45,124,0.14);
+  }
+  .chart-box {
+    position: relative;
+    background: var(--cream);
+    border: 1px solid var(--frame);
+    border-radius: 3px;
+    padding: 6px;
+    height: 300px;
+  }
+  .chart-box canvas { display: block; }
+  .chart-source {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    padding-left: 2px;
+  }
+
+  /* ---------- Valuation table ---------- */
+  .val-table-wrap { background:#fff; border-radius:10px; padding:18px; box-shadow:0 1px 4px rgba(10,45,124,0.08); border:1px solid #e7e9ef; overflow-x:auto;}
+  table.val { border-collapse: collapse; width: 100%; font-size: 14px; }
+  table.val thead th {
+    background: var(--navy);
+    color: #fff;
+    padding: 10px 12px;
+    text-align: right;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  table.val thead th:first-child { text-align: left; }
+  table.val tbody td { padding: 9px 12px; text-align: right; border-bottom: 1px solid #eef0f4; white-space: nowrap; }
+  table.val tbody td:first-child { text-align: left; font-weight: 600; }
+  table.val tbody tr:hover { background: #f6f8fc; }
+  table.val tfoot td {
+    padding: 10px 12px; text-align: right; font-weight: 700;
+    border-top: 2px solid var(--navy); background: #f1f4fb;
+  }
+  table.val tfoot td:first-child { text-align: left; }
+  .cell-high { color: #b00020; font-weight: 700; }
+  .cell-low { color: #0a7d3b; font-weight: 700; }
+  .legend-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+  /* ---------- Footer ---------- */
+  footer.botbar {
+    border-top: 1px solid #d7dae2;
+    background: #fff;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--serif);
+  }
+
+  @media (max-width: 640px) {
+    .tile-grid { grid-template-columns: 1fr; }
+    .chart-grid { grid-template-columns: 1fr; }
+    header.topbar .title { font-size: 18px; }
+    header.topbar .asof { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title" id="homeTitle">신한 PB 차트북</div>
+  <div class="asof">데이터 기준일: 2026-06-09</div>
+</header>
+
+<main id="app"></main>
+
+<footer class="botbar">
+  <span id="footL">Page · 2026-06-09 · 신한 PB 차트북</span>
+  <span>프로토타입 — 더미 데이터</span>
+</footer>
+
+<script>
+/* =====================================================================
+   DATA LAYER  — 모든 더미 데이터를 한 곳에 모음 (추후 chartbook.json 외부화 용이)
+   ===================================================================== */
+
+const AS_OF = "2026-06-09";
+const WATER_DATE = "Latest data thru 06/09/26";
+const SERIES_COLORS = ['#000000','#E8820C','#18B3C7','#8B2E2E','#6B8E23','#C71585','#2E8B57','#6A3D9A','#1A1A6E'];
+
+// --- helpers: 추세 있는 더미 시계열 생성 ---------------------------------
+function years(from, to) { const a=[]; for(let y=from;y<=to;y++) a.push(String(y)); return a; }
+function quarters(from, to){ const a=[]; for(let y=from;y<=to;y++) for(let q=1;q<=4;q++) a.push(`${y} Q${q}`); return a; }
+// 시드 기반 의사난수 (재현성)
+function rng(seed){ let s=seed; return ()=>{ s=(s*1664525+1013904223)%4294967296; return s/4294967296; }; }
+function trendSeries(n, start, drift, vol, seed){
+  const r=rng(seed); const out=[]; let v=start;
+  for(let i=0;i<n;i++){ v += drift + (r()-0.5)*vol; out.push(+v.toFixed(2)); }
+  return out;
+}
+
+// --- THEMES (허브 타일) -------------------------------------------------
+const THEMES = [
+  { id:'passive',  name:'한국 패시브 / MSCI', charts:4, type:'charts',
+    desc:'외국인 수급 · MSCI 한국 비중 · 패시브 AUM · 리밸런싱', spark:'passive' },
+  { id:'peer',     name:'피어 밸류에이션 모니터', charts:6, type:'peer',
+    desc:'업종 → 종목 2단 드릴다운 밸류에이션', spark:'peer' },
+  { id:'rates',    name:'금리 · 채권', charts:4, type:'charts',
+    desc:'국고채 금리 · 한미 금리차 · 크레딧 · 일드커브', spark:'rates' },
+  { id:'foreign',  name:'외국인 수급', charts:2, type:'charts',
+    desc:'외국인 순매수 누적 · 업종별 순매수', spark:'foreign' },
+  { id:'ph1',      name:'(추가 예정)', charts:0, type:'placeholder', desc:'준비 중' },
+  { id:'ph2',      name:'(추가 예정)', charts:0, type:'placeholder', desc:'준비 중' },
+];
+
+// --- 주제별 차트 정의 ----------------------------------------------------
+// 각 차트: {title, sub, kind, build()->Chart.js config dataset/labels}
+const TOPIC_CHARTS = {
+  passive: [
+    {
+      title:'외국인 코스피 시총비중', sub:'(% of total market cap)', kind:'line-dual',
+      labels: years(2010,2026),
+      series:[
+        { label:'외국인 비중(%)', data: trendSeries(17, 30, 0.4, 1.2, 11), color:'#0033CC', width:2.5 },
+        { label:'200일 추세', data: trendSeries(17, 31, 0.35, 0.4, 12), color:'#CC2222', width:1.2 },
+      ]
+    },
+    {
+      title:'MSCI EM 내 한국 WEIGHT', sub:'(index weight, %)', kind:'line-dual',
+      labels: years(2010,2026),
+      series:[
+        { label:'한국 weight(%)', data: trendSeries(17, 15.5, -0.18, 0.6, 21), color:'#0033CC', width:2.5 },
+        { label:'추세', data: trendSeries(17, 15.2, -0.16, 0.2, 22), color:'#CC2222', width:1.2 },
+      ]
+    },
+    {
+      title:'패시브 추종 AUM 분해', sub:'(KRW trillion, by vehicle)', kind:'bar-stack',
+      labels: years(2018,2026),
+      series:[
+        { label:'ETF', data: trendSeries(9, 35, 6, 4, 31), color:SERIES_COLORS[0] },
+        { label:'인덱스펀드', data: trendSeries(9, 22, 2.5, 3, 32), color:SERIES_COLORS[1] },
+        { label:'연기금 패시브', data: trendSeries(9, 40, 4, 5, 33), color:SERIES_COLORS[2] },
+      ]
+    },
+    {
+      title:'MSCI 리밸런싱 캘린더', sub:'(quarterly review months)', kind:'bar',
+      labels: ['2월','5월','8월','11월'],
+      series:[
+        { label:'리뷰 강도(상대)', data:[55, 100, 50, 95], color:SERIES_COLORS[8] },
+      ]
+    },
+  ],
+  rates: [
+    {
+      title:'한국 국고채 금리', sub:'(3y vs 10y, %)', kind:'line-dual',
+      labels: years(2010,2026),
+      series:[
+        { label:'국고 3년', data: trendSeries(17, 3.2, -0.02, 0.5, 41), color:'#0033CC', width:2.5 },
+        { label:'국고 10년', data: trendSeries(17, 3.8, -0.01, 0.5, 42), color:'#CC2222', width:1.6 },
+      ]
+    },
+    {
+      title:'한미 금리차', sub:'(KR 10y − US 10y, bp)', kind:'zero-line',
+      labels: years(2010,2026),
+      series:[
+        { label:'금리차(bp)', data: trendSeries(17, 30, -8, 35, 51), color:'#0033CC', width:2.5 },
+      ]
+    },
+    {
+      title:'크레딧 스프레드', sub:'(AA− corp − KTB, bp)', kind:'line-dual',
+      labels: years(2010,2026),
+      series:[
+        { label:'AA− 스프레드', data: trendSeries(17, 70, 1.5, 18, 61), color:'#0033CC', width:2.5 },
+        { label:'추세', data: trendSeries(17, 72, 1.2, 6, 62), color:'#CC2222', width:1.2 },
+      ]
+    },
+    {
+      title:'일드커브', sub:'(KTB term structure, %)', kind:'line',
+      labels: ['1Y','2Y','3Y','5Y','10Y','20Y','30Y'],
+      series:[
+        { label:'2026-06', data:[2.85,2.95,3.05,3.25,3.55,3.70,3.72], color:'#0033CC', width:2.5 },
+        { label:'1년 전', data:[3.40,3.45,3.50,3.55,3.62,3.70,3.71], color:'#CC2222', width:1.6 },
+      ]
+    },
+  ],
+  foreign: [
+    {
+      title:'외국인 순매수 누적', sub:'(KOSPI, KRW trillion, cumulative)', kind:'line-dual',
+      labels: years(2010,2026),
+      series:[
+        { label:'누적 순매수', data: trendSeries(17, 0, 4, 14, 71), color:'#0033CC', width:2.5 },
+        { label:'추세', data: trendSeries(17, 2, 4, 4, 72), color:'#CC2222', width:1.2 },
+      ]
+    },
+    {
+      title:'업종별 외국인 순매수', sub:'(YTD, KRW trillion)', kind:'zero-bar',
+      labels: ['반도체','2차전지','자동차','금융','바이오','인터넷','철강','화학'],
+      series:[
+        { label:'순매수', data:[8.2, -3.1, 2.4, 1.6, -1.2, 3.0, -0.6, 0.9], color:SERIES_COLORS[0] },
+      ]
+    },
+  ],
+};
+
+// --- 피어 밸류에이션: 업종 + 종목 ----------------------------------------
+const PEER_SECTORS = [
+  { id:'semi',     name:'반도체',        avgPer:14.2, count:6 },
+  { id:'battery',  name:'2차전지',       avgPer:22.8, count:6 },
+  { id:'auto',     name:'자동차',        avgPer:6.1,  count:5 },
+  { id:'bio',      name:'바이오',        avgPer:38.5, count:5 },
+  { id:'internet', name:'인터넷/플랫폼', avgPer:25.4, count:6 },
+  { id:'fin',      name:'금융',          avgPer:5.8,  count:6 },
+];
+
+// 종목별: [종목명, PER, PBR, EV/EBITDA, ROE(%), 배당수익률(%)]
+const PEER_STOCKS = {
+  semi: [
+    ['삼성전자', 13.1, 1.4, 6.2, 11.2, 2.1],
+    ['SK하이닉스', 9.8, 1.8, 4.5, 19.5, 1.2],
+    ['DB하이텍', 7.2, 0.9, 3.8, 8.4, 3.0],
+    ['리노공업', 22.4, 4.2, 14.1, 21.0, 1.0],
+    ['주성엔지니어링', 16.5, 2.6, 9.0, 15.5, 0.5],
+    ['이오테크닉스', 18.0, 2.9, 11.3, 13.0, 0.8],
+  ],
+  battery: [
+    ['LG에너지솔루션', 28.5, 3.1, 12.5, 8.5, 0.4],
+    ['삼성SDI', 18.2, 1.9, 8.4, 7.8, 1.1],
+    ['에코프로비엠', 35.0, 5.2, 18.0, 12.0, 0.2],
+    ['포스코퓨처엠', 24.0, 3.4, 13.2, 6.5, 0.3],
+    ['엘앤에프', 16.8, 2.2, 9.1, 5.0, 0.5],
+    ['SK아이이테크놀로지', 14.5, 1.6, 7.0, 4.2, 0.0],
+  ],
+  auto: [
+    ['현대차', 5.2, 0.6, 3.1, 13.5, 5.2],
+    ['기아', 4.8, 0.7, 2.8, 16.0, 4.8],
+    ['현대모비스', 6.5, 0.5, 3.5, 7.2, 3.1],
+    ['한온시스템', 11.0, 1.2, 6.4, 4.0, 2.0],
+    ['HL만도', 8.4, 0.9, 4.9, 8.8, 1.8],
+  ],
+  bio: [
+    ['삼성바이오로직스', 42.0, 4.8, 28.0, 12.0, 0.0],
+    ['셀트리온', 30.5, 2.4, 18.5, 9.5, 0.6],
+    ['SK바이오팜', 55.0, 6.1, 40.0, 6.0, 0.0],
+    ['유한양행', 28.0, 1.8, 16.0, 7.0, 1.2],
+    ['한미약품', 37.0, 3.5, 20.0, 10.5, 0.5],
+  ],
+  internet: [
+    ['NAVER', 22.0, 1.6, 12.0, 8.0, 0.7],
+    ['카카오', 31.5, 1.9, 16.5, 4.5, 0.2],
+    ['크래프톤', 14.2, 2.8, 8.0, 18.0, 0.0],
+    ['엔씨소프트', 19.0, 1.3, 9.5, 6.0, 2.5],
+    ['더블유게임즈', 8.5, 1.1, 4.2, 13.0, 1.5],
+    ['카카오페이', 60.0, 2.5, 45.0, 2.0, 0.0],
+  ],
+  fin: [
+    ['KB금융', 6.2, 0.5, 0, 9.8, 5.5],
+    ['신한지주', 5.8, 0.5, 0, 9.2, 5.8],
+    ['하나금융지주', 5.1, 0.4, 0, 9.5, 6.2],
+    ['우리금융지주', 4.6, 0.4, 0, 8.8, 7.0],
+    ['삼성화재', 8.0, 0.9, 0, 11.5, 4.5],
+    ['메리츠금융지주', 7.2, 1.3, 0, 18.0, 3.0],
+  ],
+};
+
+/* =====================================================================
+   CHART RENDER LAYER
+   ===================================================================== */
+
+let liveCharts = [];
+function destroyCharts(){ liveCharts.forEach(c=>{ try{c.destroy();}catch(e){} }); liveCharts = []; }
+
+// 야데니 공통 스타일 플러그인: 내부 좌상단 제목 + 우하단 워터마크
+const yardeniPlugin = {
+  id:'yardeni',
+  afterDraw(chart, args, opts){
+    const {ctx, chartArea} = chart;
+    if(!chartArea) return;
+    const o = chart.$yard || {};
+    ctx.save();
+    // 제목 (좌상단, 굵은 대문자)
+    ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillStyle='#1A1A1A';
+    ctx.font='bold 13px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText((o.title||'').toUpperCase(), chartArea.left+6, chartArea.top+5);
+    if(o.sub){
+      ctx.font='11px "Helvetica Neue", Arial, sans-serif';
+      ctx.fillStyle='#555';
+      ctx.fillText(o.sub, chartArea.left+6, chartArea.top+21);
+    }
+    // 우하단 워터마크 + latest data
+    ctx.textAlign='right'; ctx.textBaseline='bottom';
+    ctx.font='italic 18px Georgia, serif';
+    ctx.fillStyle='rgba(120,120,120,0.28)';
+    ctx.fillText('신한PB', chartArea.right-8, chartArea.bottom-20);
+    ctx.font='10px "Helvetica Neue", Arial, sans-serif';
+    ctx.fillStyle='rgba(90,90,90,0.7)';
+    ctx.fillText(WATER_DATE, chartArea.right-8, chartArea.bottom-4);
+    ctx.restore();
+  }
+};
+Chart.register(yardeniPlugin);
+
+// 공통 옵션 빌더 (양쪽 Y축, 크림 배경 프레임은 CSS 박스로 처리)
+function baseOptions(meta, opts={}){
+  const stacked = !!opts.stacked;
+  const zeroBold = !!opts.zeroBold;
+  const scaleY = {
+    position:'left',
+    grid:{ color:'#E0DDD0', drawTicks:true,
+           lineWidth: ctx => (zeroBold && ctx.tick.value===0) ? 2 : 1,
+           color: ctx => (zeroBold && ctx.tick.value===0) ? '#1A1A1A' : '#E0DDD0' },
+    ticks:{ color:'#333', font:{size:10} },
+    stacked,
+  };
+  return {
+    responsive:true,
+    maintainAspectRatio:false,
+    layout:{ padding:{ top:28, right:6, bottom:6, left:4 } },
+    plugins:{
+      legend:{ display:true, position:'bottom', labels:{ boxWidth:12, font:{size:11}, color:'#333' } },
+      title:{ display:false },
+      tooltip:{ enabled:true },
+    },
+    scales:{
+      x:{ grid:{ color:'#E0DDD0' }, ticks:{ color:'#333', font:{size:10}, maxRotation:0, autoSkip:true, maxTicksLimit:9 }, stacked },
+      y: scaleY,
+      y1:{ position:'right', grid:{ drawOnChartArea:false }, ticks:{ color:'#333', font:{size:10} }, stacked,
+           // mirror left axis range
+           afterDataLimits(scale){ const l=scale.chart.scales.y; if(l){ scale.min=l.min; scale.max=l.max; } } },
+    },
+    elements:{ point:{ radius:0 }, line:{ tension:0.15 } },
+  };
+}
+
+function renderChart(canvas, def){
+  let cfg;
+  if(def.kind==='line' || def.kind==='line-dual'){
+    cfg = {
+      type:'line',
+      data:{ labels:def.labels, datasets: def.series.map(s=>({
+        label:s.label, data:s.data, borderColor:s.color, backgroundColor:s.color,
+        borderWidth:s.width||2, yAxisID:'y', fill:false,
+      })) },
+      options: baseOptions(def),
+    };
+  } else if(def.kind==='bar'){
+    cfg = {
+      type:'bar',
+      data:{ labels:def.labels, datasets: def.series.map((s,i)=>({
+        label:s.label, data:s.data, backgroundColor:s.color, borderColor:'#1A1A1A', borderWidth:0.5, yAxisID:'y',
+      })) },
+      options: baseOptions(def),
+    };
+  } else if(def.kind==='bar-stack'){
+    cfg = {
+      type:'bar',
+      data:{ labels:def.labels, datasets: def.series.map((s,i)=>({
+        label:s.label, data:s.data, backgroundColor:s.color, borderColor:'#1A1A1A', borderWidth:0.4, yAxisID:'y', stack:'a',
+      })) },
+      options: baseOptions(def, {stacked:true}),
+    };
+  } else if(def.kind==='zero-line'){
+    cfg = {
+      type:'line',
+      data:{ labels:def.labels, datasets: def.series.map(s=>({
+        label:s.label, data:s.data, borderColor:s.color, backgroundColor:s.color, borderWidth:s.width||2.5, yAxisID:'y', fill:false,
+      })) },
+      options: baseOptions(def, {zeroBold:true}),
+    };
+  } else if(def.kind==='zero-bar'){
+    cfg = {
+      type:'bar',
+      data:{ labels:def.labels, datasets: def.series.map(s=>({
+        label:s.label, data:s.data, yAxisID:'y', borderColor:'#1A1A1A', borderWidth:0.4,
+        backgroundColor: s.data.map(v=> v>=0 ? '#0033CC' : '#CC2222'),
+      })) },
+      options: baseOptions(def, {zeroBold:true}),
+    };
+  }
+  const chart = new Chart(canvas, cfg);
+  chart.$yard = { title:def.title, sub:def.sub };
+  chart.update('none');
+  liveCharts.push(chart);
+  return chart;
+}
+
+// 타일 스파크라인 (간단 라인)
+function renderSpark(canvas, seed){
+  const data = trendSeries(24, 50, 0.6, 6, seed);
+  const chart = new Chart(canvas, {
+    type:'line',
+    data:{ labels:data.map((_,i)=>i), datasets:[{ data, borderColor:'#0033CC', borderWidth:1.8, fill:false, pointRadius:0, tension:0.2 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false, resizeDelay:0,
+      layout:{ padding:4 },
+      plugins:{ legend:{display:false}, tooltip:{enabled:false} },
+      scales:{ x:{display:false}, y:{display:false} },
+      elements:{ point:{radius:0} },
+      animation:false,
+    },
+  });
+  liveCharts.push(chart);
+}
+
+/* =====================================================================
+   VIEW / ROUTER LAYER
+   ===================================================================== */
+
+const app = document.getElementById('app');
+const footL = document.getElementById('footL');
+
+function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+function seedFromString(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))%100000; return h+1; }
+
+// ---- Hub ----
+function viewHub(){
+  footL.textContent = `허브 · ${AS_OF} · 신한 PB 차트북`;
+  const wrap = el(`<div>
+    <div class="subhead">리서치한 차트를 주제별로 모아보는 곳</div>
+    <div class="tile-grid" id="tiles"></div>
+  </div>`);
+  app.appendChild(wrap);
+  const grid = wrap.querySelector('#tiles');
+
+  THEMES.forEach(t=>{
+    if(t.type==='placeholder'){
+      const tile = el(`<div class="tile disabled" aria-disabled="true">
+        <span class="badge gray">준비 중</span>
+        <div class="tile-name">${t.name}</div>
+        <div class="spark-ph">준비 중</div>
+        <div class="tile-desc">${t.desc}</div>
+      </div>`);
+      grid.appendChild(tile);
+      return;
+    }
+    const tile = el(`<div class="tile" tabindex="0" role="button" aria-label="${t.name}">
+      <span class="badge">차트 ${t.charts}개</span>
+      <div class="tile-name">${t.name}</div>
+      <div class="spark-box"><canvas></canvas></div>
+      <div class="tile-desc">${t.desc}</div>
+    </div>`);
+    grid.appendChild(tile);
+    renderSpark(tile.querySelector('canvas'), seedFromString(t.spark||t.id));
+    const go = ()=>{ location.hash = (t.type==='peer') ? '#/topic/peer' : `#/topic/${t.id}`; };
+    tile.addEventListener('click', go);
+    tile.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
+  });
+}
+
+// ---- Topic detail (charts) ----
+function viewTopic(id){
+  const theme = THEMES.find(t=>t.id===id);
+  if(!theme){ location.hash='#/'; return; }
+
+  if(id==='peer'){ return viewPeerSectors(theme); }
+
+  footL.textContent = `${theme.name} · ${AS_OF} · 신한 PB 차트북`;
+  const head = el(`<div class="page-head">
+    <button class="back-btn" id="back">← 뒤로</button>
+    <div><div class="page-title">${theme.name}</div>
+    <div class="page-sub">차트 ${theme.charts}개 · 야데니 스타일</div></div>
+  </div>`);
+  app.appendChild(head);
+  head.querySelector('#back').addEventListener('click', ()=> location.hash='#/');
+
+  const grid = el(`<div class="chart-grid"></div>`);
+  app.appendChild(grid);
+
+  (TOPIC_CHARTS[id]||[]).forEach((def,i)=>{
+    const card = el(`<div class="chart-card">
+      <div class="chart-box"><canvas></canvas></div>
+      <div class="chart-source">Source: 더미 데이터 (프로토타입)</div>
+    </div>`);
+    grid.appendChild(card);
+    renderChart(card.querySelector('canvas'), def);
+  });
+}
+
+// ---- Peer: sector tiles ----
+function viewPeerSectors(theme){
+  footL.textContent = `피어 밸류에이션 · ${AS_OF} · 신한 PB 차트북`;
+  const head = el(`<div class="page-head">
+    <button class="back-btn" id="back">← 뒤로</button>
+    <div><div class="page-title">피어 밸류에이션 모니터</div>
+    <div class="page-sub">업종을 선택하면 종목별 밸류에이션 테이블로 드릴다운</div></div>
+  </div>`);
+  app.appendChild(head);
+  head.querySelector('#back').addEventListener('click', ()=> location.hash='#/');
+
+  const maxPer = Math.max(...PEER_SECTORS.map(s=>s.avgPer));
+  const grid = el(`<div class="tile-grid"></div>`);
+  app.appendChild(grid);
+
+  PEER_SECTORS.forEach(s=>{
+    const pct = Math.round(s.avgPer/maxPer*100);
+    const tile = el(`<div class="tile" tabindex="0" role="button" aria-label="${s.name} 업종">
+      <span class="badge">${s.count}종목</span>
+      <div class="tile-name">${s.name}</div>
+      <div class="sector-meta">
+        <div class="minibar-wrap">
+          <div class="minibar-label"><span>평균 PER</span><span>${s.avgPer.toFixed(1)}x</span></div>
+          <div class="minibar-track"><div class="minibar-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      <div class="tile-desc">클릭 → 종목별 PER · PBR · EV/EBITDA · ROE · 배당</div>
+    </div>`);
+    grid.appendChild(tile);
+    const go = ()=> location.hash = `#/peer/${s.id}`;
+    tile.addEventListener('click', go);
+    tile.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
+  });
+}
+
+// ---- Peer: stock table ----
+function viewPeerStocks(sectorId){
+  const sector = PEER_SECTORS.find(s=>s.id===sectorId);
+  const rows = PEER_STOCKS[sectorId];
+  if(!sector || !rows){ location.hash='#/topic/peer'; return; }
+  footL.textContent = `${sector.name} 밸류에이션 · ${AS_OF} · 신한 PB 차트북`;
+
+  const head = el(`<div class="page-head">
+    <button class="back-btn" id="back">← 업종 목록</button>
+    <div><div class="page-title">${sector.name} — 종목별 밸류에이션</div>
+    <div class="page-sub">업종 평균 대비 색상 하이라이트 (빨강=고평가, 초록=저평가)</div></div>
+  </div>`);
+  app.appendChild(head);
+  head.querySelector('#back').addEventListener('click', ()=> location.hash='#/topic/peer');
+
+  // 컬럼 평균 (EV/EBITDA, ROE, 배당 포함). 0(=N/A) 값은 평균서 제외.
+  const cols = [1,2,3,4,5]; // PER,PBR,EV/EBITDA,ROE,Div
+  const avg = {};
+  cols.forEach(c=>{
+    const vals = rows.map(r=>r[c]).filter(v=>v>0);
+    avg[c] = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  });
+  // 고/저 평가 방향: PER/PBR/EV-EBITDA 는 높을수록 비쌈(red), ROE/배당은 높을수록 좋음(green)
+  const expensiveHigh = {1:true,2:true,3:true,4:false,5:false};
+  function cls(c,v){
+    if(v<=0 || avg[c]<=0) return '';
+    const dev = (v-avg[c])/avg[c];
+    if(Math.abs(dev) < 0.12) return '';
+    const high = v>avg[c];
+    // expensiveHigh true → high면 red; false(ROE/Div) → high면 green
+    if(expensiveHigh[c]) return high ? 'cell-high' : 'cell-low';
+    else return high ? 'cell-low' : 'cell-high';
+  }
+  function fmt(c,v){ if(v<=0 && c===3) return '—'; if(c===4||c===5) return v.toFixed(1)+'%'; return v.toFixed(1)+'x'; }
+
+  const wrap = el(`<div class="val-table-wrap">
+    <table class="val">
+      <thead><tr>
+        <th>종목명</th><th>PER</th><th>PBR</th><th>EV/EBITDA</th><th>ROE</th><th>배당수익률</th>
+      </tr></thead>
+      <tbody></tbody>
+      <tfoot></tfoot>
+    </table>
+    <div class="legend-note">업종 평균 PER ${sector.avgPer.toFixed(1)}x · 평균 대비 ±12% 초과 시 색상 표시. EV/EBITDA가 의미없는 금융업은 — 로 표기.</div>
+  </div>`);
+  app.appendChild(wrap);
+
+  const tb = wrap.querySelector('tbody');
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r[0]}</td>` + cols.map(c=>`<td class="${cls(c,r[c])}">${fmt(c,r[c])}</td>`).join('');
+    tb.appendChild(tr);
+  });
+  const tf = wrap.querySelector('tfoot');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>업종 평균</td>` + cols.map(c=>`<td>${avg[c]>0?fmt(c,avg[c]):'—'}</td>`).join('');
+  tf.appendChild(tr);
+}
+
+/* =====================================================================
+   ROUTER
+   ===================================================================== */
+function router(){
+  destroyCharts();
+  app.innerHTML='';
+  app.scrollTo?.(0,0); window.scrollTo(0,0);
+
+  const hash = location.hash || '#/';
+  const parts = hash.replace(/^#\//,'').split('/').filter(Boolean);
+
+  if(parts.length===0){ viewHub(); }
+  else if(parts[0]==='topic' && parts[1]){ viewTopic(parts[1]); }
+  else if(parts[0]==='peer' && parts[1]){ viewPeerStocks(parts[1]); }
+  else { viewHub(); }
+}
+
+document.getElementById('homeTitle').addEventListener('click', ()=> location.hash='#/');
+window.addEventListener('hashchange', router);
+window.addEventListener('DOMContentLoaded', router);
+if(document.readyState!=='loading') router();
+</script>
+</body>
+</html>

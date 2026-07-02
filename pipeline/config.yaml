@@ -1,0 +1,266 @@
+# Chartbook 파이프라인 설정
+# 새 차트 추가 = 이 파일만 편집하면 됨
+# source: yahoo | fred
+# type: timeseries | heatmap_perf
+
+charts:
+  # ─── 주식시장 ───────────────────────────────────────────────
+  - id: sp500
+    section: "주식시장"
+    type: timeseries
+    source: yahoo
+    title: "S&P 500"
+    subtitle: "200일 이동평균"
+    unit: "index"
+    tickers:
+      - "^GSPC"
+    series_names:
+      "^GSPC": "S&P 500"
+    ma200: true              # 200일 이동평균 추가 여부
+    ma200_name: "200D MA"
+    lookback_years: 6
+
+  - id: kospi
+    section: "한국"
+    type: timeseries
+    source: yahoo
+    title: "KOSPI / KOSDAQ"
+    subtitle: "종합주가지수"
+    unit: "index"
+    tickers:
+      - "^KS11"
+      - "^KQ11"
+    series_names:
+      "^KS11": "KOSPI"
+      "^KQ11": "KOSDAQ"
+    lookback_years: 6
+
+  - id: vix
+    section: "리스크"
+    type: timeseries
+    source: yahoo
+    title: "VIX 공포지수"
+    subtitle: "CBOE Volatility Index"
+    unit: "index"
+    tickers:
+      - "^VIX"
+    series_names:
+      "^VIX": "VIX"
+    lookback_years: 6
+
+  - id: sectors
+    section: "섹터"
+    type: heatmap_perf
+    source: yahoo
+    title: "섹터 퍼포먼스"
+    source_label: "Yahoo Finance (SPDR ETFs)"
+    periods: ["1D", "1W", "1M", "3M", "YTD", "1Y"]
+    items:
+      - ticker: "XLK"
+        name: "Technology"
+      - ticker: "XLF"
+        name: "Financials"
+      - ticker: "XLV"
+        name: "Health Care"
+      - ticker: "XLE"
+        name: "Energy"
+      - ticker: "XLI"
+        name: "Industrials"
+      - ticker: "XLY"
+        name: "Consumer Disc."
+      - ticker: "XLP"
+        name: "Consumer Staples"
+      - ticker: "XLU"
+        name: "Utilities"
+      - ticker: "XLB"
+        name: "Materials"
+      - ticker: "XLRE"
+        name: "Real Estate"
+      - ticker: "XLC"
+        name: "Communication"
+
+  # ─── 밸류에이션 (multpl.com 스크래핑, 키 불필요) ────────────
+  # FRED에는 Shiller CAPE / S&P 500 EPS 직접 시리즈가 없어
+  # multpl.com 공개 테이블을 스크래핑한다 (fetch_multpl.py).
+  - id: valuation_pe
+    section: "밸류에이션"
+    type: timeseries
+    source: multpl
+    title: "밸류에이션 (P/E)"
+    subtitle: "Shiller CAPE & S&P 500 트레일링 P/E"
+    unit: "x"
+    # 2개 시리즈:
+    # - Shiller CAPE: https://www.multpl.com/shiller-pe/table/by-month
+    # - S&P 500 P/E (trailing): https://www.multpl.com/s-p-500-pe-ratio/table/by-month
+    multpl_urls:
+      shiller_cape: "https://www.multpl.com/shiller-pe/table/by-month"
+      sp500_pe: "https://www.multpl.com/s-p-500-pe-ratio/table/by-month"
+
+  - id: sp500_eps
+    section: "밸류에이션"
+    type: timeseries
+    source: multpl
+    title: "S&P 500 EPS"
+    subtitle: "주당순이익 (트레일링 12개월)"
+    unit: "USD"
+    # 1개 시리즈: TTM EPS
+    # https://www.multpl.com/s-p-500-earnings/table/by-month
+    multpl_urls:
+      sp500_eps: "https://www.multpl.com/s-p-500-earnings/table/by-month"
+
+  # ─── 밸류에이션 (FRED 필요) ─────────────────────────────────
+  - id: buffett
+    section: "밸류에이션"
+    type: timeseries
+    source: fred
+    title: "Buffett Indicator"
+    subtitle: "시가총액 / GDP (%)"
+    unit: "%"
+    note: "Wilshire 5000 Total Market Cap / Nominal GDP × 100"
+    # FRED 실제 시리즈:
+    # - WILL5000PRFC: Wilshire 5000 Price-Return Full Cap Index (분기별)
+    # - GDP: Gross Domestic Product (분기별, 십억달러)
+    # 비율 = WILL5000PRFC / GDP × 100
+    # (Wilshire 5000은 시장 전체의 가격 지수이며 직접적 시총 달러값이 아님)
+    # 대안: WILL5000IND (Dollar Market Cap) / GDP * 100이 더 정확하지만
+    # WILL5000PRFC로도 트렌드 파악 가능 (Yardeni 방식과 유사)
+    fred_series:
+      numerator: "WILL5000PRFC"    # Wilshire 5000 Full Cap Index
+      denominator: "GDP"            # Nominal GDP (십억달러, 분기별)
+    series_name: "Mkt Cap / GDP"
+
+  # ─── 채권/금리 (yahoo, 키 불필요) ───────────────────────────
+  # 주의: yahoo 금리 지수(^IRX/^FVX/^TNX/^TYX)는 값이 10배.
+  #       예) 10Y 4.25% → ^TNX 42.5. 모두 ÷10 해서 % 단위로 저장.
+  - id: ust_yields
+    section: "채권/금리"
+    type: timeseries
+    source: yahoo
+    title: "미국채 금리"
+    subtitle: "3M · 5Y · 10Y · 30Y"
+    unit: "%"
+    lookback_years: 6
+    # 만기 라벨 → yahoo 티커. series 이름은 만기 라벨 그대로.
+    tickers:
+      "3M": "^IRX"
+      "5Y": "^FVX"
+      "10Y": "^TNX"
+      "30Y": "^TYX"
+    scale_divisor: 10            # ÷10 변환 계수
+
+  - id: yield_spread
+    section: "채권/금리"
+    type: timeseries
+    source: yahoo
+    title: "10Y-3M 스프레드"
+    subtitle: "장단기 금리차 (마이너스=역전)"
+    unit: "%"
+    lookback_years: 6
+    # (^TNX - ^IRX)/10. 같은 날짜로 정렬 후 계산.
+    series_name: "10Y-3M"
+
+  - id: yield_curve
+    section: "채권/금리"
+    type: curve_snapshot
+    source: yahoo
+    title: "미국 국채 수익률 곡선"
+    unit: "%"
+    lookback_years: 6
+    # "현재"(최신 영업일) vs "1년 전"(~365일 전 직전 영업일) 만기별 스냅샷.
+    maturities: ["3M", "5Y", "10Y", "30Y"]
+    snapshot_labels: ["현재", "1년 전"]
+
+  - id: credit_proxy
+    section: "채권/금리"
+    type: timeseries
+    source: yahoo
+    title: "크레딧 리스크 프록시"
+    subtitle: "HYG / LQD (하이일드 vs 투자등급)"
+    unit: "ratio"
+    note: "하락 = 하이일드 언더퍼폼 = 크레딧 스트레스 / 상승 = 위험선호"
+    lookback_years: 6
+    # HYG(하이일드 ETF) / LQD(투자등급 회사채 ETF) 비율. 키 불필요.
+    tickers:
+      - "HYG"
+      - "LQD"
+    series_name: "HYG/LQD (크레딧 리스크 프록시)"
+
+  # ─── 채권/금리 (FRED 필요) ──────────────────────────────────
+  - id: credit_hy_oas
+    section: "채권/금리"
+    type: timeseries
+    source: fred
+    title: "하이일드 OAS 스프레드"
+    subtitle: "ICE BofA US High Yield OAS"
+    unit: "%"
+    note: "옵션조정 스프레드. 확대 시 크레딧 리스크·스트레스 신호."
+    # FRED series: BAMLH0A0HYM2 (일별, %)
+    fred_series:
+      series_id: "BAMLH0A0HYM2"
+    series_name: "HY OAS"
+
+  # ─── 환율 (yahoo, 키 불필요) ────────────────────────────────
+  - id: usdkrw
+    section: "환율"
+    type: timeseries
+    source: yahoo
+    title: "원/달러 환율"
+    subtitle: "USD/KRW"
+    unit: "원"
+    lookback_years: 6
+    tickers:
+      - "KRW=X"
+    series_name: "원/달러"
+
+  - id: dxy
+    section: "환율"
+    type: timeseries
+    source: yahoo
+    title: "달러 인덱스 (DXY)"
+    subtitle: "US Dollar Index"
+    unit: "index"
+    lookback_years: 6
+    # 폴백 순서: DX-Y.NYB → ^DX-Y.NYB → DXY. 모두 실패 시 ready:false.
+    tickers:
+      - "DX-Y.NYB"
+      - "^DX-Y.NYB"
+      - "DXY"
+    series_name: "달러 인덱스"
+
+  # ─── 원자재 (yahoo, 키 불필요) ──────────────────────────────
+  - id: gold
+    section: "원자재"
+    type: timeseries
+    source: yahoo
+    title: "금 선물"
+    subtitle: "Gold Futures (GC=F)"
+    unit: "USD"
+    lookback_years: 6
+    tickers:
+      - "GC=F"
+    series_name: "금 (Gold)"
+
+  - id: wti
+    section: "원자재"
+    type: timeseries
+    source: yahoo
+    title: "WTI 원유 선물"
+    subtitle: "Crude Oil Futures (CL=F)"
+    unit: "USD"
+    lookback_years: 6
+    tickers:
+      - "CL=F"
+    series_name: "WTI 원유"
+
+  - id: copper
+    section: "원자재"
+    type: timeseries
+    source: yahoo
+    title: "구리 선물"
+    subtitle: "Copper Futures (HG=F)"
+    unit: "USD"
+    note: "구리는 경기 선행 지표(Dr. Copper). 상승=경기 확장 기대."
+    lookback_years: 6
+    tickers:
+      - "HG=F"
+    series_name: "구리 (Copper)"

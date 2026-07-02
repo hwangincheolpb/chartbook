@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.chartbook.deploy</string>
+
+    <!-- 매일 06:50 — 06:30 데이터 파이프라인(com.user.chartbook) 이후 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/ai/workspace/dev/chartbook/scripts/deploy.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ai/workspace/dev/chartbook</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>50</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/ai/workspace/dev/chartbook/logs/deploy.launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/ai/workspace/dev/chartbook/logs/deploy.launchd.err.log</string>
+
+    <key>ThrottleInterval</key>
+    <integer>3600</integer>
+</dict>
+</plist>

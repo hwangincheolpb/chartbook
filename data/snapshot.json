@@ -1,0 +1,93 @@
+{
+  "updated": "2026-07-02T12:13:38+09:00",
+  "cards": [
+    {
+      "id": "us10y",
+      "label": "미국채 10Y",
+      "value": 4.475,
+      "unit": "%",
+      "d1": 2.36,
+      "state": "good",
+      "badge": "여유",
+      "caption": "CTA 손절선 4.85%까지 +0.38%p",
+      "link": "#card-ls_rate_peak"
+    },
+    {
+      "id": "spx_band",
+      "label": "S&P500 / 21x 밴드",
+      "value": 1.48,
+      "unit": "x",
+      "d1": -0.22,
+      "state": "warn",
+      "badge": "드림장",
+      "caption": "지수 7,483 = 21x 밴드 상단(5,072)의 1.48배 — 1.0 초과=드림장",
+      "link": "#card-sp500"
+    },
+    {
+      "id": "vix",
+      "label": "VIX",
+      "value": 16.59,
+      "unit": "",
+      "d1": 0.85,
+      "state": "neutral",
+      "badge": "보통",
+      "caption": "15~30 정상 범위 (15 미만이 공포역설 경계)",
+      "link": "#card-vix"
+    },
+    {
+      "id": "move",
+      "label": "MOVE",
+      "value": 68.6,
+      "unit": "",
+      "d1": 2.65,
+      "state": "good",
+      "badge": "정온",
+      "caption": "낮음 = 채권시장 정온 (금리 변동성)",
+      "link": "#card-move_index"
+    },
+    {
+      "id": "dxy",
+      "label": "달러 인덱스",
+      "value": 101.37,
+      "unit": "",
+      "d1": 0.18,
+      "state": "neutral",
+      "badge": "",
+      "caption": "DXY — 달러 강세=신흥국·원자재 역풍",
+      "link": "#card-dxy"
+    },
+    {
+      "id": "usdkrw",
+      "label": "USD/KRW",
+      "value": 1548.6,
+      "unit": "원",
+      "d1": 0.45,
+      "state": "neutral",
+      "badge": "",
+      "caption": "원/달러 환율",
+      "link": "#card-usdkrw"
+    },
+    {
+      "id": "copper_gold",
+      "label": "구리/금 비율",
+      "value": 1.517,
+      "unit": "",
+      "d1": -1.46,
+      "state": "neutral",
+      "badge": "↑",
+      "caption": "3개월 ↑ +26.8% — 상승=성장·금리 상방 (건들락)",
+      "link": "#card-copper"
+    },
+    {
+      "id": "credit",
+      "label": "크레딧 HYG/LQD",
+      "value": 0.7338,
+      "unit": "",
+      "d1": 0.19,
+      "state": "good",
+      "badge": "정온",
+      "caption": "3개월 ↑ +1.0% — 하락=크레딧 스트레스",
+      "link": "#card-credit_proxy"
+    }
+  ]
+}

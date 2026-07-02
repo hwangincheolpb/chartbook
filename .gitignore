@@ -1,0 +1,48 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# 환경변수 (절대 커밋 금지)
+.env
+
+# 로그 (전체 제외 — *.out 등 포함)
+logs/
+tool/logs/
+
+# 업로드 인박스 (이미지 + 로컬 절대경로 포함 jobs.json)
+inbox/
+
+# 파이프라인 캐시 / 백업
+data/cache/
+*.bak
+
+# Claude 로컬 설정
+.claude/
+
+# 사이트 스크린샷 (바이너리 대형 파일)
+site/*.png
+site/*.jpg
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
+
+# 에디터
+.idea/
+.vscode/
+*.swp
+*.swo
