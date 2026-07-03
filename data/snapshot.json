@@ -1,15 +1,15 @@
 {
-  "updated": "2026-07-03T06:30:00+09:00",
+  "updated": "2026-07-04T06:30:00+09:00",
   "cards": [
     {
       "id": "us10y",
       "label": "미국채 10Y",
-      "value": 4.485,
+      "value": 4.372,
       "unit": "%",
-      "d1": 2.58,
+      "d1": -0.46,
       "state": "good",
       "badge": "여유",
-      "caption": "CTA 손절선 4.85%까지 +0.36%p",
+      "caption": "CTA 손절선 4.85%까지 +0.48%p",
       "link": "#card-ls_rate_peak"
     },
     {
@@ -26,9 +26,9 @@
     {
       "id": "vix",
       "label": "VIX",
-      "value": 16.15,
+      "value": 15.81,
       "unit": "",
-      "d1": -2.65,
+      "d1": -2.11,
       "state": "neutral",
       "badge": "보통",
       "caption": "15~30 정상 범위 (15 미만이 공포역설 경계)",
@@ -37,9 +37,9 @@
     {
       "id": "move",
       "label": "MOVE",
-      "value": 65.4,
+      "value": 66.8,
       "unit": "",
-      "d1": -2.08,
+      "d1": -0.46,
       "state": "good",
       "badge": "정온",
       "caption": "낮음 = 채권시장 정온 (금리 변동성)",
@@ -48,9 +48,9 @@
     {
       "id": "dxy",
       "label": "달러 인덱스",
-      "value": 100.87,
+      "value": 100.86,
       "unit": "",
-      "d1": -0.51,
+      "d1": -0.0,
       "state": "neutral",
       "badge": "",
       "caption": "DXY — 달러 강세=신흥국·원자재 역풍",
@@ -59,9 +59,9 @@
     {
       "id": "usdkrw",
       "label": "USD/KRW",
-      "value": 1538.6,
+      "value": 1530.2,
       "unit": "원",
-      "d1": -0.65,
+      "d1": -1.4,
       "state": "neutral",
       "badge": "",
       "caption": "원/달러 환율",
@@ -70,12 +70,12 @@
     {
       "id": "copper_gold",
       "label": "구리/금 비율",
-      "value": 1.493,
+      "value": 1.486,
       "unit": "",
-      "d1": -0.79,
+      "d1": -0.02,
       "state": "neutral",
       "badge": "↑",
-      "caption": "3개월 ↑ +24.9% — 상승=성장·금리 상방 (건들락)",
+      "caption": "3개월 ↑ +24.3% — 상승=성장·금리 상방 (건들락)",
       "link": "#card-copper"
     },
     {
