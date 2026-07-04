@@ -1,15 +1,15 @@
 {
-  "updated": "2026-07-04T06:30:00+09:00",
+  "updated": "2026-07-05T06:30:03+09:00",
   "cards": [
     {
       "id": "us10y",
       "label": "미국채 10Y",
-      "value": 4.372,
+      "value": 4.485,
       "unit": "%",
-      "d1": -0.46,
+      "d1": null,
       "state": "good",
       "badge": "여유",
-      "caption": "CTA 손절선 4.85%까지 +0.48%p",
+      "caption": "CTA 손절선 4.85%까지 +0.36%p",
       "link": "#card-ls_rate_peak"
     },
     {
@@ -26,9 +26,9 @@
     {
       "id": "vix",
       "label": "VIX",
-      "value": 15.81,
+      "value": 16.15,
       "unit": "",
-      "d1": -2.11,
+      "d1": -2.65,
       "state": "neutral",
       "badge": "보통",
       "caption": "15~30 정상 범위 (15 미만이 공포역설 경계)",
@@ -37,9 +37,9 @@
     {
       "id": "move",
       "label": "MOVE",
-      "value": 66.8,
+      "value": 65.4,
       "unit": "",
-      "d1": -0.46,
+      "d1": null,
       "state": "good",
       "badge": "정온",
       "caption": "낮음 = 채권시장 정온 (금리 변동성)",
@@ -86,7 +86,7 @@
       "d1": -0.01,
       "state": "good",
       "badge": "정온",
-      "caption": "3개월 → +1.0% — 하락=크레딧 스트레스",
+      "caption": "3개월 → +0.9% — 하락=크레딧 스트레스",
       "link": "#card-credit_proxy"
     }
   ]
