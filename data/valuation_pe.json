@@ -5,7 +5,7 @@
   "subtitle": "Shiller CAPE & S&P 500 트레일링 P/E",
   "source": "multpl.com",
   "unit": "x",
-  "updated": "2026-07-05T06:30:05+09:00",
+  "updated": "2026-07-06T06:30:03+09:00",
   "note": "월별 데이터. Shiller CAPE = 경기조정 P/E (10년 평균 실질이익 기준).",
   "series": [
     {
