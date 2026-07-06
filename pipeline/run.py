@@ -141,6 +141,13 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
         {"id": "valuation_pe", "file": "valuation_pe.json", "type": "timeseries",   "section": "밸류에이션"},
         {"id": "sp500_eps",    "file": "sp500_eps.json",    "type": "timeseries",   "section": "밸류에이션"},
         # buffett: Valley AI 링크(valley_buffett_link)로 대체 — RETIRED_IDS 참조.
+        # ─── 버블 체크리스트 (김성환 '버블 템플릿' 2025-08-19 — 정점 5지표) ─
+        # 판정 배지·종합(n/5)은 build_bubble() → data/bubble_checklist.json (CONTRACT 참조)
+        {"id": "margin_debt",  "file": "margin_debt.json",  "type": "timeseries", "section": "버블 체크리스트"},
+        {"id": "ipo_rs",       "file": "ipo_rs.json",       "type": "timeseries", "section": "버블 체크리스트"},
+        {"id": "arkk_rs",      "file": "arkk_rs.json",      "type": "timeseries", "section": "버블 체크리스트"},
+        {"id": "fed_funds",    "file": "fed_funds.json",    "type": "timeseries", "section": "버블 체크리스트"},
+        {"id": "capex_margin", "file": "capex_margin.json", "type": "timeseries", "section": "버블 체크리스트"},
         # ─── 이선엽 체인 (framework §7 논지 체인, 채권/금리 앞 배치) ─
         {"id": "ls_rate_peak",     "file": "ls_rate_peak.json",     "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 1},
         {"id": "ls_semi_vs_power", "file": "ls_semi_vs_power.json", "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 6},
@@ -573,15 +580,224 @@ def build_snapshot(now: str) -> dict[str, Any]:
             "link": "#card-kr_fear_greed",
         }
 
+    # 11. 버블 체크리스트 종합 — build_bubble()이 먼저 만든 bubble_checklist.json 재료.
+    #     value = 🔴 개수. 🔴 2개+=alert / 🔴 1개 or 🟡 2개+=warn / 그 외=good.
+    def card_bubble():
+        bb = _load_chart("bubble_checklist")
+        if not bb or not bb.get("overall"):
+            return None
+        o = bb["overall"]
+        n_red, n_warn = o.get("red", 0), o.get("warn", 0)
+        if n_red >= 2:
+            state = "alert"
+        elif n_red == 1 or n_warn >= 2:
+            state = "warn"
+        else:
+            state = "good"
+        parts = " ".join(f"{it['emoji']}{it['label']}" for it in bb.get("items", []))
+        judged = o.get("judged", 0)
+        na_txt = "" if judged >= o.get("total", 5) else f" · 판정가능 {judged}/{o.get('total', 5)}"
+        return {
+            "id": "bubble", "label": "버블 체크리스트", "value": n_red, "unit": "/5",
+            "d1": None, "state": state, "badge": o.get("label", f"정점 근접도 {n_red}/5"),
+            "caption": f"{parts} — 🔴 2개 이상=정점 경보{na_txt} (김성환 버블 템플릿)",
+            "link": "#card-margin_debt",
+        }
+
     for builder in (card_us10y, card_rate_scenario, card_spx_band, card_vix, card_move,
                     card_dxy, card_usdkrw, card_copper_gold, card_credit,
-                    card_rotation, card_kr_fear_greed):
+                    card_rotation, card_kr_fear_greed, card_bubble):
         try:
             add(builder())
         except Exception as e:
             logger.warning(f"[SNAPSHOT] {builder.__name__} 계산 실패 → skip: {e}")
 
     return {"updated": now, "cards": cards}
+
+
+# ─────────────────────────────────────────────────────────────
+# 버블 체크리스트 (data/bubble_checklist.json) — 미국 증시 버블 정점 5지표 자동판정.
+# 논지: 신한투자증권 김성환 "버블 템플릿: 2026-2027 미국 증시 버블 시나리오" (2025-08-19).
+# snapshot과 동일 원칙: 모든 차트 fetch 후 data/*.json에서만 계산 (추가 네트워크 없음).
+# 재료 없는 지표는 state:"na"(⚪ 판정 불가) — 배열에서 빼지 않는다 (5지표 고정 표시).
+# 규격은 CONTRACT.md "bubble_checklist.json" 참조.
+# ─────────────────────────────────────────────────────────────
+
+BUBBLE_STATE_EMOJI = {"good": "🟢", "warn": "🟡", "alert": "🔴", "na": "⚪"}
+
+
+def _month_end_values(pairs: list) -> list[float]:
+    """일별 pairs → 월말(각 월 마지막 데이터) 값 리스트, 월 오름차순."""
+    by_month: dict[str, float] = {}
+    for d, v in pairs:
+        if v is not None:
+            by_month[d[:7]] = float(v)
+    return [by_month[m] for m in sorted(by_month)]
+
+
+def build_bubble(now: str) -> dict[str, Any]:
+    """생성된 data/*.json에서 버블 체크리스트 5지표 판정을 계산."""
+    items: list[dict[str, Any]] = []
+
+    # ① 신용매수 — margin_debt의 '2년 저점 대비 상승률' 최신값. +50%↑🟡 / +80%↑🔴
+    def judge_margin():
+        pairs = _series_pairs(_load_chart("margin_debt"), "2년 저점")
+        last = _latest(pairs)
+        if last is None:
+            return None
+        rise = last[1]
+        state = "alert" if rise >= 80 else ("warn" if rise >= 50 else "good")
+        return {
+            "state": state, "value": round(rise, 1), "unit": "%",
+            "caption": f"margin debt 2년 저점 대비 {rise:+.1f}% (기준 +50/+80 · 과거 정점 +90~100%)",
+        }
+
+    # ② IPO 붐 — ipo_rs의 '6개월 변화율' 최신값. +20%↑🟡 / +40%↑🔴
+    def judge_ipo():
+        pairs = _series_pairs(_load_chart("ipo_rs"), "6개월")
+        last = _latest(pairs)
+        if last is None:
+            return None
+        chg = last[1]
+        state = "alert" if chg >= 40 else ("warn" if chg >= 20 else "good")
+        return {
+            "state": state, "value": round(chg, 1), "unit": "%",
+            "caption": f"IPO/S&P500 상대강도 6개월 {chg:+.1f}% (기준 +20/+40)",
+        }
+
+    # ③ 투기 강세 — arkk_rs 상대강도의 월간 연속 아웃퍼폼 개월 수.
+    #    6개월↑ 연속=🟡 / 10개월↑(≈12개월 가까이) 연속 + 6개월 +40%↑ 급등=🔴
+    def judge_arkk():
+        pairs = _series_pairs(_load_chart("arkk_rs"), "상대강도")
+        if not pairs:
+            return None
+        monthly = _month_end_values(pairs)
+        if len(monthly) < 2:
+            return None
+        streak = 0
+        for i in range(len(monthly) - 1, 0, -1):
+            if monthly[i] > monthly[i - 1]:
+                streak += 1
+            else:
+                break
+        # 급등 판정: 상대강도 6개월(~183일) 변화율
+        from datetime import timedelta
+        last_d, last_v = pairs[-1][0], float(pairs[-1][1])
+        base_dt = datetime.strptime(last_d, "%Y-%m-%d") - timedelta(days=183)
+        base = None
+        for d, v in pairs:
+            if v is None:
+                continue
+            if datetime.strptime(d, "%Y-%m-%d") <= base_dt:
+                base = float(v)
+            else:
+                break
+        chg6m = (last_v / base - 1) * 100 if base else None
+        surge = chg6m is not None and chg6m >= 40
+        if streak >= 10 and surge:
+            state = "alert"
+        elif streak >= 6:
+            state = "warn"
+        else:
+            state = "good"
+        chg_txt = f"{chg6m:+.1f}%" if chg6m is not None else "n/a"
+        return {
+            "state": state, "value": streak, "unit": "개월",
+            "caption": (
+                f"ARKK/S&P500 월간 연속 아웃퍼폼 {streak}개월 · 6개월 {chg_txt} "
+                "(6개월↑=🟡 / 10개월↑+급등 40%↑=🔴)"
+            ),
+        }
+
+    # ④ 연준 긴축 전환 — FEDFUNDS 월간. 인하/동결=🟢 /
+    #    최근 3개월 바닥 대비 +25bp=🟡 / 인하 사이클(-50bp↑) 후 인상 전환(+25bp↑) 확정=🔴
+    def judge_fed():
+        pairs = _series_pairs(_load_chart("fed_funds"))
+        vals = [float(v) for _, v in pairs if v is not None]
+        if len(vals) < 4:
+            return None
+        latest = vals[-1]
+        win24 = vals[-24:] if len(vals) >= 24 else vals
+        trough = min(win24)
+        trough_pos = len(vals) - len(win24) + win24.index(trough)
+        pre = vals[max(0, trough_pos - 36):trough_pos + 1]
+        cut_cycle = pre and (max(pre) - trough) >= 0.5      # 정점→바닥 -50bp 이상 = 인하 사이클
+        hike_confirmed = (latest - trough) >= 0.25          # 바닥 대비 +25bp = 인상 전환
+        low3 = min(vals[-3:])
+        if cut_cycle and hike_confirmed:
+            state, txt = "alert", "인하 사이클 후 인상 전환 확정"
+        elif (latest - low3) >= 0.25:
+            state, txt = "warn", "3개월 바닥 대비 +25bp — 인상 논의 국면"
+        else:
+            state, txt = "good", "인하/동결 지속"
+        return {
+            "state": state, "value": round(latest, 2), "unit": "%",
+            "caption": f"FEDFUNDS {latest:.2f}% · 24개월 바닥 {trough:.2f}% — {txt}",
+        }
+
+    # ⑤ 공급과잉/마진 하락 — Capex YoY 플러스인데 마진 프록시(CP/GDP)가
+    #    2분기 연속 하락=🔴 / 최근 1분기 하락=🟡 / 그 외=🟢
+    def judge_capex():
+        chart = _load_chart("capex_margin")
+        capex = _series_pairs(chart, "YoY")   # "비국방자본재 수주 YoY"
+        margin = _series_pairs(chart, "마진")  # "기업이익마진 프록시 (CP/GDP)"
+        capex_last = _latest(capex)
+        m_vals = [float(v) for _, v in margin if v is not None]
+        if capex_last is None or len(m_vals) < 3:
+            return None
+        capex_pos = capex_last[1] > 0
+        d1 = m_vals[-1] < m_vals[-2]
+        d2 = m_vals[-2] < m_vals[-3]
+        if capex_pos and d1 and d2:
+            state, txt = "alert", "투자 확장 중 마진 2분기 연속 하락 — 공급과잉 신호"
+        elif d1:
+            state, txt = "warn", "마진 프록시 1분기 하락"
+        else:
+            state, txt = "good", "마진 유지"
+        return {
+            "state": state, "value": round(m_vals[-1], 2), "unit": "%",
+            "caption": (
+                f"Capex YoY {capex_last[1]:+.1f}% · CP/GDP {m_vals[-1]:.2f}% — {txt}"
+            ),
+        }
+
+    judges = [
+        ("margin_debt",  "신용매수",   judge_margin),
+        ("ipo_rs",       "IPO 붐",     judge_ipo),
+        ("arkk_rs",      "투기 강세",  judge_arkk),
+        ("fed_funds",    "긴축 전환",  judge_fed),
+        ("capex_margin", "공급과잉",   judge_capex),
+    ]
+    for chart_id, label, fn in judges:
+        result = None
+        try:
+            result = fn()
+        except Exception as e:
+            logger.warning(f"[BUBBLE] {chart_id} 판정 실패 → 판정 불가: {e}")
+        if result is None:
+            result = {"state": "na", "value": None, "unit": "",
+                      "caption": "데이터 없음 — 판정 불가"}
+        items.append({
+            "chart": chart_id,
+            "label": label,
+            "state": result["state"],
+            "emoji": BUBBLE_STATE_EMOJI[result["state"]],
+            "value": result.get("value"),
+            "unit": result.get("unit", ""),
+            "caption": result["caption"],
+        })
+
+    n_red = sum(1 for it in items if it["state"] == "alert")
+    n_warn = sum(1 for it in items if it["state"] == "warn")
+    judged = sum(1 for it in items if it["state"] != "na")
+    overall = {
+        "red": n_red,
+        "warn": n_warn,
+        "judged": judged,
+        "total": len(items),
+        "label": f"정점 근접도 {n_red}/{len(items)}",
+    }
+    return {"updated": now, "overall": overall, "items": items}
 
 
 # ─────────────────────────────────────────────────────────────
@@ -619,6 +835,7 @@ def run() -> None:
             fetch_ust_yields, fetch_yield_spread, fetch_yield_curve,
             fetch_credit_proxy,
             fetch_usdkrw, fetch_dxy, fetch_gold, fetch_wti, fetch_copper,
+            fetch_ipo_rs, fetch_arkk_rs,
         )
         from fetch_leesunyeop import (
             fetch_ls_rate_peak, fetch_ls_semi_vs_power, fetch_ls_memory_cycle,
@@ -628,6 +845,7 @@ def run() -> None:
             fetch_kr_foreign_flow, fetch_kr_rotation_check, fetch_kr_fear_greed,
         )
         from fetch_multpl import fetch_all_multpl
+        from fetch_finra import fetch_margin_debt
     except ImportError:
         # run.py가 다른 디렉토리에서 실행될 때를 대비
         sys.path.insert(0, str(PIPELINE_DIR))
@@ -636,6 +854,7 @@ def run() -> None:
             fetch_ust_yields, fetch_yield_spread, fetch_yield_curve,
             fetch_credit_proxy,
             fetch_usdkrw, fetch_dxy, fetch_gold, fetch_wti, fetch_copper,
+            fetch_ipo_rs, fetch_arkk_rs,
         )
         from fetch_leesunyeop import (
             fetch_ls_rate_peak, fetch_ls_semi_vs_power, fetch_ls_memory_cycle,
@@ -645,6 +864,7 @@ def run() -> None:
             fetch_kr_foreign_flow, fetch_kr_rotation_check, fetch_kr_fear_greed,
         )
         from fetch_multpl import fetch_all_multpl
+        from fetch_finra import fetch_margin_debt
 
     # ─── multpl.com 먼저 수집 (sp500 밸류밴드 재료 = EPS TTM) ───
     # sp500 승격판이 EPS×15/18/21 밴드를 그리므로 yahoo 루프보다 앞서 실행.
@@ -685,6 +905,10 @@ def run() -> None:
         ("kr_foreign_flow",   fetch_kr_foreign_flow),
         ("kr_rotation_check", fetch_kr_rotation_check),
         ("kr_fear_greed",     fetch_kr_fear_greed),
+        # 버블 체크리스트 ②③ (yahoo) + ① (FINRA — fetch_finra.py, 키 불필요)
+        ("ipo_rs",            fetch_ipo_rs),
+        ("arkk_rs",           fetch_arkk_rs),
+        ("margin_debt",       fetch_margin_debt),
     ]
 
     for chart_id, fetcher in yahoo_fetchers:
@@ -698,7 +922,7 @@ def run() -> None:
         except Exception as e:
             logger.error(f"[FAIL] {chart_id}: {e}")
             chart_results.append({"id": chart_id, "ready": False, "reason": str(e)})
-            skipped.append(f"{chart_id} (Yahoo 오류: {e})")
+            skipped.append(f"{chart_id} (수집 오류: {e})")
 
     # ─── 수집 결과 처리 헬퍼 ────────────────────────────────────
     def process_results(source_results: dict) -> None:
@@ -734,6 +958,16 @@ def run() -> None:
     index_path = DATA_DIR / "index.json"
     write_json(index_path, index_data)
     logger.info(f"[OK] index.json → {index_path}")
+
+    # ─── bubble_checklist.json 생성 (버블 정점 5지표 자동판정) ──
+    # snapshot보다 먼저 — snapshot의 '버블 체크리스트' 카드가 이 파일을 재료로 쓴다.
+    try:
+        bubble = build_bubble(now)
+        bubble_path = DATA_DIR / "bubble_checklist.json"
+        write_json(bubble_path, bubble)
+        logger.info(f"[OK] bubble_checklist.json ({bubble['overall']['label']}) → {bubble_path}")
+    except Exception as e:
+        logger.error(f"[FAIL] bubble_checklist.json: {e}")
 
     # ─── snapshot.json 생성 (아침 스냅샷 보드) ──────────────────
     try:

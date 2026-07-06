@@ -84,6 +84,47 @@ def _series_to_pairs(series: pd.Series) -> list[list]:
     return pairs
 
 
+def _fetch_series_keyless(series_id: str, observation_start: str = "1990-01-01") -> pd.Series:
+    """
+    FRED 공개 CSV 엔드포인트(fredgraph.csv) — API 키 불필요.
+    버블 체크리스트 차트(fed_funds, capex_margin) 전용 폴백.
+    (credit_hy_oas 등 기존 FRED 차트의 '키 없으면 ready:false' 규칙은 유지 — CONTRACT 참조)
+    """
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    resp = requests.get(url, timeout=30)
+    resp.raise_for_status()
+
+    records = {}
+    lines = resp.text.strip().splitlines()
+    for line in lines[1:]:  # 헤더: observation_date,<SERIES_ID>
+        parts = line.split(",")
+        if len(parts) != 2:
+            continue
+        date_str, val_str = parts[0].strip(), parts[1].strip()
+        if val_str in (".", ""):
+            continue
+        if date_str < observation_start:
+            continue
+        try:
+            records[date_str] = float(val_str)
+        except ValueError:
+            continue
+
+    if not records:
+        raise ValueError(f"FRED 키리스 CSV {series_id}: 데이터 없음")
+    series = pd.Series(records)
+    series.index = pd.to_datetime(series.index)
+    return series.sort_index()
+
+
+def _fetch_series_any(series_id: str, api_key: str | None,
+                      observation_start: str = "1990-01-01") -> pd.Series:
+    """API 키 있으면 정식 API, 없으면 fredgraph.csv 공개 CSV 폴백."""
+    if api_key:
+        return _fetch_series(series_id, api_key, observation_start)
+    return _fetch_series_keyless(series_id, observation_start)
+
+
 def fetch_buffett(api_key: str) -> dict[str, Any]:
     """
     [비활성 2026-07-06] Valley AI 링크 카드로 대체 — fetch_all_fred에서 제외됨.
@@ -149,6 +190,89 @@ def fetch_credit_hy_oas(api_key: str) -> dict[str, Any]:
     }
 
 
+# ─── 버블 체크리스트 (김성환 "버블 템플릿" 2025-08-19) ───────────
+# ④ 연준 긴축 전환 = FEDFUNDS  ⑤ 공급과잉/마진 하락 = NEWORDER YoY + CP/GDP
+# 두 차트는 키 없으면 fredgraph.csv(공개 CSV, 키 불필요)로 폴백 — 상시 ready.
+# 판정 배지는 run.py build_bubble()이 data/*.json에서 계산.
+
+def fetch_fed_funds(api_key: str | None = None) -> dict[str, Any]:
+    """버블 체크리스트 ④ 연준 긴축 전환 — 실효 연방기금금리(FEDFUNDS, 월간)."""
+    logger.info("연방기금금리(FEDFUNDS) 수집 중...")
+    ff = _fetch_series_any("FEDFUNDS", api_key, "1995-01-01")
+    logger.info(f"  FEDFUNDS: {len(ff)}개 (최신 {round(float(ff.iloc[-1]), 2)}%)")
+
+    return {
+        "id": "fed_funds",
+        "type": "timeseries",
+        "title": "연준 기준금리 (Fed Funds)",
+        "subtitle": "인하/동결=🟢 · 3개월 바닥 대비 +25bp=🟡 · 인하 사이클 후 인상 전환=🔴",
+        "source": "FRED (FEDFUNDS)" + ("" if api_key else " — 공개 CSV(키리스)"),
+        "unit": "%",
+        "updated": _now_kst(),
+        "note": (
+            "[버블④ 긴축 전환] 버블을 끝내는 건 밸류에이션이 아니라 연준이다 — 1929, 2000, "
+            "2022 전부 인하 사이클이 인상으로 재전환된 뒤 정점이 왔다. 인하/동결이 이어지는 동안 "
+            "버블은 계속 자랄 수 있다. "
+            "[출처] 김성환(신한투자증권) '버블 템플릿' 2025-08-19 "
+            "[한계] FEDFUNDS는 실효금리 월평균 — 목표범위 변경(FOMC 결정)보다 표시가 완만·지연"
+        ),
+        "series": [
+            {"name": "실효 연방기금금리", "data": _series_to_pairs(ff)},
+        ],
+    }
+
+
+def fetch_capex_margin(api_key: str | None = None) -> dict[str, Any]:
+    """
+    버블 체크리스트 ⑤ 공급과잉/마진 하락 프록시.
+    Capex 프록시 = 비국방자본재(항공기 제외) 신규수주 NEWORDER YoY% (월간)
+    마진 프록시 = 세후 기업이익/명목GDP = CP/GDP % (분기)
+    논리: '투자는 느는데 마진이 꺾인다' = 공급과잉 진입 신호.
+    """
+    logger.info("Capex YoY(NEWORDER) + 마진 프록시(CP/GDP) 수집 중...")
+    neworder = _fetch_series_any("NEWORDER", api_key, "1995-01-01")
+    cp = _fetch_series_any("CP", api_key, "1995-01-01")
+    gdp = _fetch_series_any("GDP", api_key, "1995-01-01")
+
+    capex_yoy = (neworder.pct_change(12) * 100).dropna()
+
+    margin_df = pd.DataFrame({"cp": cp, "gdp": gdp}).dropna()
+    margin = (margin_df["cp"] / margin_df["gdp"] * 100).dropna()
+
+    cutoff = "2000-01-01"
+    capex_yoy = capex_yoy[capex_yoy.index >= cutoff]
+    margin = margin[margin.index >= cutoff]
+    logger.info(
+        f"  Capex YoY: {len(capex_yoy)}개 (최신 {round(float(capex_yoy.iloc[-1]), 1)}%) / "
+        f"CP/GDP: {len(margin)}개 (최신 {round(float(margin.iloc[-1]), 2)}%)"
+    )
+
+    return {
+        "id": "capex_margin",
+        "type": "timeseries",
+        "title": "공급과잉 프록시 (Capex vs 마진)",
+        "subtitle": "Capex YoY+ 인데 마진(CP/GDP) 2분기 연속 하락=🔴 / 1분기 하락=🟡",
+        "source": "FRED (NEWORDER, CP, GDP)" + ("" if api_key else " — 공개 CSV(키리스)"),
+        "unit": "%",
+        "unit2": "%",
+        "updated": _now_kst(),
+        "note": (
+            "[버블⑤ 공급과잉] 버블 후반부의 공통 구조: 호황을 믿고 투자(Capex)는 계속 느는데 "
+            "경쟁 심화로 마진이 먼저 꺾인다. 비국방자본재 수주 YoY가 플러스인 채로 기업이익마진 "
+            "프록시(CP/GDP)가 2분기 연속 하락하면 정점 근접. "
+            "[출처] 김성환(신한투자증권) '버블 템플릿' 2025-08-19 "
+            "[한계] CP/GDP는 전 산업 세후이익 기준 분기·발표 지연 ~2개월. S&P500 마진과 괴리 가능"
+        ),
+        "markLines": [
+            {"value": 0, "label": "Capex YoY 0선", "axis": 0},
+        ],
+        "series": [
+            {"name": "비국방자본재 수주 YoY", "yAxis": 0, "data": _series_to_pairs(capex_yoy)},
+            {"name": "기업이익마진 프록시 (CP/GDP)", "yAxis": 1, "data": _series_to_pairs(margin)},
+        ],
+    }
+
+
 def fetch_all_fred() -> dict[str, dict[str, Any]]:
     """
     FRED 차트 전체를 수집한다. (credit_hy_oas 담당)
@@ -163,21 +287,28 @@ def fetch_all_fred() -> dict[str, dict[str, Any]]:
     api_key = _get_api_key()
     results: dict[str, dict[str, Any]] = {}
 
-    # FRED API 키 없으면 모든 FRED 차트 skip
+    # FRED API 키 없으면 키 필수 차트(credit_hy_oas)는 skip (기존 규칙 유지)
     if not api_key:
-        logger.warning("FRED_API_KEY 미설정 → 모든 FRED 차트 건너뜀")
+        logger.warning("FRED_API_KEY 미설정 → 키 필수 FRED 차트 건너뜀 "
+                       "(버블 체크리스트 fed_funds/capex_margin은 공개 CSV 폴백)")
         for cid in ("credit_hy_oas",):
             results[cid] = {
                 "_skip": True,
                 "_reason": "FRED_API_KEY 환경변수 미설정",
             }
-        return results
+        fred_fetchers = []
+    else:
+        # buffett은 Valley 링크 대체로 제외 (재활성화 방법은 모듈 docstring)
+        fred_fetchers = [
+            ("credit_hy_oas", fetch_credit_hy_oas),
+        ]
 
-    # 키가 있으면 각 차트 수집 시도 (개별 실패는 graceful skip)
-    # buffett은 Valley 링크 대체로 제외 (재활성화 방법은 모듈 docstring)
-    fred_fetchers = [
-        ("credit_hy_oas", fetch_credit_hy_oas),
+    # 버블 체크리스트 FRED 차트 — 키 없어도 fredgraph.csv(공개 CSV)로 수집
+    fred_fetchers += [
+        ("fed_funds", fetch_fed_funds),
+        ("capex_margin", fetch_capex_margin),
     ]
+
     for cid, fetcher in fred_fetchers:
         try:
             results[cid] = fetcher(api_key)

@@ -711,3 +711,101 @@ def fetch_copper(lookback_years: int = 6) -> dict[str, Any]:
     }
 
 
+
+
+# ─── 버블 체크리스트 (김성환 "버블 템플릿" 2025-08-19) ───────────
+# ② IPO 붐 프록시 = IPO ETF / S&P500 상대강도
+# ③ 중소형 투기 강세 = ARKK / S&P500 상대강도 (러셀2000이 아니라 ARKK — 김성환 명시)
+# 판정 배지는 run.py build_bubble()이 data/*.json에서 계산 (CONTRACT 참조).
+
+def _relative_strength(numer: str, lookback_years: int, buffer_days: int = 220) -> pd.Series:
+    """numer/^GSPC 상대강도 → 표시 구간 첫 값 100으로 지수화한 daily Series."""
+    end = datetime.today()
+    start = end - timedelta(days=lookback_years * 365 + buffer_days)
+    close_df = _download([numer, "^GSPC"], start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+    for t in (numer, "^GSPC"):
+        if t not in close_df.columns:
+            raise ValueError(f"{numer} RS: {t} 데이터 없음")
+    pair = close_df[[numer, "^GSPC"]].dropna()
+    if pair.empty:
+        raise ValueError(f"{numer} RS: 공통 거래일 없음")
+    ratio = pair[numer] / pair["^GSPC"]
+    cutoff = (end - timedelta(days=lookback_years * 365)).strftime("%Y-%m-%d")
+    ratio = ratio[ratio.index >= cutoff]
+    if ratio.empty or ratio.iloc[0] == 0:
+        raise ValueError(f"{numer} RS: 표시 구간 데이터 없음")
+    return ratio / ratio.iloc[0] * 100.0
+
+
+def _rs_chg_6m_series(rs: pd.Series) -> pd.Series:
+    """상대강도의 6개월(~183일) 변화율(%) 시계열."""
+    out = {}
+    for ts, v in rs.items():
+        base_idx = rs.index[rs.index <= ts - timedelta(days=183)]
+        if len(base_idx) == 0:
+            continue
+        base = rs.loc[base_idx[-1]]
+        if base:
+            out[ts] = (v / base - 1) * 100.0
+    return pd.Series(out)
+
+
+def fetch_ipo_rs(lookback_years: int = 3) -> dict[str, Any]:
+    """버블 체크리스트 ② IPO 붐 — IPO ETF/S&P500 상대강도 + 6개월 변화율(우축)."""
+    logger.info("IPO/S&P500 상대강도 수집 중...")
+    rs = _relative_strength("IPO", lookback_years)
+    chg6m = _rs_chg_6m_series(rs)
+    logger.info(f"  IPO RS: {len(rs)}개 (6M 변화율 최신 {round(float(chg6m.iloc[-1]), 1)}%)")
+
+    return {
+        "id": "ipo_rs",
+        "type": "timeseries",
+        "title": "IPO 붐 (IPO ETF / S&P500)",
+        "subtitle": "상대강도 6개월 변화율 +20%↑=🟡 / +40%↑=🔴",
+        "source": "Yahoo Finance (Renaissance IPO ETF ÷ ^GSPC)",
+        "unit": "index100",
+        "unit2": "%",
+        "updated": _now_kst(),
+        "note": (
+            "[버블② IPO 붐] 버블 정점 국면에선 신규 상장주가 지수를 큰 폭으로 아웃퍼폼한다 "
+            "(1999, 2020-21). IPO ETF의 S&P500 대비 상대강도가 6개월에 +40% 이상 튀면 정점 근접. "
+            "[출처] 김성환(신한투자증권) '버블 템플릿' 2025-08-19 — IPO 붐 프록시 "
+            "[한계] 공모 건수·조달금액이 아닌 상장 후 주가 프록시. ETF 리밸런싱 노이즈 존재"
+        ),
+        "markLines": [
+            {"value": 20, "label": "주의 +20%", "axis": 1},
+            {"value": 40, "label": "정점 근접 +40%", "axis": 1},
+        ],
+        "series": [
+            {"name": "IPO/S&P500 상대강도", "yAxis": 0, "data": _series_to_pairs(rs)},
+            {"name": "6개월 변화율 (%)", "yAxis": 1, "data": _series_to_pairs(chg6m)},
+        ],
+    }
+
+
+def fetch_arkk_rs(lookback_years: int = 5) -> dict[str, Any]:
+    """버블 체크리스트 ③ 중소형 투기 강세 — ARKK/S&P500 상대강도 (2020-21 버블 비교용 5y)."""
+    logger.info("ARKK/S&P500 상대강도 수집 중...")
+    rs = _relative_strength("ARKK", lookback_years)
+    logger.info(f"  ARKK RS: {len(rs)}개 (최신 {round(float(rs.iloc[-1]), 1)})")
+
+    return {
+        "id": "arkk_rs",
+        "type": "timeseries",
+        "title": "투기 강세 (ARKK / S&P500)",
+        "subtitle": "월간 연속 아웃퍼폼 6개월↑=🟡 / 12개월 가까이 + 급등=🔴",
+        "source": "Yahoo Finance (ARKK ÷ ^GSPC)",
+        "unit": "index100",
+        "updated": _now_kst(),
+        "note": (
+            "[버블③ 투기 강세] 정점 국면에선 실적 없는 고성장 중소형주가 대세 아웃퍼폼한다. "
+            "지표는 러셀2000이 아니라 ARKK — 김성환 명시(러셀은 가치·금융 비중이 커서 투기 심리를 "
+            "못 잡는다). ARKK 상대강도가 월간 기준 6개월 이상 연속 아웃퍼폼이면 주의, "
+            "12개월 가까이 대세 아웃퍼폼 + 급등이면 정점 근접. "
+            "[출처] 김성환(신한투자증권) '버블 템플릿' 2025-08-19 "
+            "[한계] ARKK는 단일 액티브 펀드 — 매니저 종목 교체 리스크 존재"
+        ),
+        "series": [
+            {"name": "ARKK/S&P500 상대강도", "data": _series_to_pairs(rs)},
+        ],
+    }

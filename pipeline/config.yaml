@@ -131,6 +131,75 @@ charts:
       denominator: "GDP"            # Nominal GDP (십억달러, 분기별)
     series_name: "Mkt Cap / GDP"
 
+  # ─── 버블 체크리스트 (김성환 "버블 템플릿" 2025-08-19) ──────
+  # 미국 증시 버블 정점 5지표. 판정 배지(🟢/🟡/🔴)와 종합(정점 근접도 n/5)은
+  # run.py build_bubble() → data/bubble_checklist.json (CONTRACT 참조).
+  - id: margin_debt
+    section: "버블 체크리스트"
+    type: timeseries
+    source: finra            # fetch_finra.py — 키 불필요
+    title: "신용매수 잔고 (Margin Debt)"
+    subtitle: "FINRA 마진 잔고 — 2년 저점 대비 +50%↑=🟡 / +80%↑=🔴 (과거 정점 +90~100%)"
+    unit: "십억$"
+    unit2: "%"
+    # 1차: 공식 xlsx (전체 히스토리 1997~, 같은 URL에 매월 갱신)
+    #   https://www.finra.org/sites/default/files/2021-03/margin-statistics.xlsx
+    # 2차 폴백: margin-statistics 페이지 HTML 표 (최근 13개월)
+    # series: Debit Balances(십억$) + 직전 2년(24개월) 저점 대비 상승률(%, 우축)
+    # markLines: +50(주의)/+80(정점 근접), axis 1
+
+  - id: ipo_rs
+    section: "버블 체크리스트"
+    type: timeseries
+    source: yahoo
+    title: "IPO 붐 (IPO ETF / S&P500)"
+    subtitle: "상대강도 6개월 변화율 +20%↑=🟡 / +40%↑=🔴"
+    unit: "index100"
+    unit2: "%"
+    lookback_years: 3
+    # Renaissance IPO ETF("IPO") ÷ ^GSPC 상대강도 index100 + 6개월 변화율(%, 우축)
+    tickers:
+      - "IPO"
+      - "^GSPC"
+
+  - id: arkk_rs
+    section: "버블 체크리스트"
+    type: timeseries
+    source: yahoo
+    title: "투기 강세 (ARKK / S&P500)"
+    subtitle: "월간 연속 아웃퍼폼 6개월↑=🟡 / 12개월 가까이 + 급등=🔴"
+    unit: "index100"
+    lookback_years: 5        # 2020-21 버블 국면 비교 가능하게 5y
+    # 러셀2000이 아니라 ARKK — 김성환 명시 (러셀은 가치·금융 비중↑, 투기 심리 못 잡음)
+    tickers:
+      - "ARKK"
+      - "^GSPC"
+
+  - id: fed_funds
+    section: "버블 체크리스트"
+    type: timeseries
+    source: fred             # FRED_API_KEY 없으면 fredgraph.csv 공개 CSV 폴백 (상시 ready)
+    title: "연준 기준금리 (Fed Funds)"
+    subtitle: "인하/동결=🟢 · 3개월 바닥 대비 +25bp=🟡 · 인하 사이클 후 인상 전환=🔴"
+    unit: "%"
+    fred_series:
+      series_id: "FEDFUNDS"   # 실효 연방기금금리 (월간)
+    series_name: "실효 연방기금금리"
+
+  - id: capex_margin
+    section: "버블 체크리스트"
+    type: timeseries
+    source: fred             # FRED_API_KEY 없으면 fredgraph.csv 공개 CSV 폴백 (상시 ready)
+    title: "공급과잉 프록시 (Capex vs 마진)"
+    subtitle: "Capex YoY+ 인데 마진(CP/GDP) 2분기 연속 하락=🔴 / 1분기 하락=🟡"
+    unit: "%"
+    unit2: "%"
+    # 판정 논리 고정: "투자는 느는데 마진이 꺾인다" (시리즈 교체 시에도 유지)
+    fred_series:
+      capex: "NEWORDER"       # 비국방자본재(항공기 제외) 신규수주 (월간) → YoY %
+      profit: "CP"            # 세후 기업이익 (분기, SAAR)
+      denominator: "GDP"      # 명목 GDP (분기) → 마진 프록시 = CP/GDP %
+
   # ─── 채권/금리 (yahoo, 키 불필요) ───────────────────────────
   # 주의: yahoo 금리 지수(^IRX/^FVX/^TNX/^TYX)는 값이 10배.
   #       예) 10Y 4.25% → ^TNX 42.5. 모두 ÷10 해서 % 단위로 저장.

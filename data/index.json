@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T15:26:28+09:00",
+  "updated": "2026-07-07T06:30:03+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -73,6 +73,46 @@
       "file": "sp500_eps.json",
       "type": "timeseries",
       "section": "밸류에이션",
+      "ready": true,
+      "daily": false
+    },
+    {
+      "id": "margin_debt",
+      "file": "margin_debt.json",
+      "type": "timeseries",
+      "section": "버블 체크리스트",
+      "ready": true,
+      "daily": false
+    },
+    {
+      "id": "ipo_rs",
+      "file": "ipo_rs.json",
+      "type": "timeseries",
+      "section": "버블 체크리스트",
+      "ready": true,
+      "daily": false
+    },
+    {
+      "id": "arkk_rs",
+      "file": "arkk_rs.json",
+      "type": "timeseries",
+      "section": "버블 체크리스트",
+      "ready": true,
+      "daily": false
+    },
+    {
+      "id": "fed_funds",
+      "file": "fed_funds.json",
+      "type": "timeseries",
+      "section": "버블 체크리스트",
+      "ready": true,
+      "daily": false
+    },
+    {
+      "id": "capex_margin",
+      "file": "capex_margin.json",
+      "type": "timeseries",
+      "section": "버블 체크리스트",
       "ready": true,
       "daily": false
     },

@@ -798,7 +798,16 @@ function ensureSection(sectionName, container) {
   const header = document.createElement('div');
   header.className = 'section-header collapsible';
   header.id = sectionId;
-  header.innerHTML = `<span class="section-num">${num}</span><span class="section-label">${escapeHtml(sectionName)}</span><div class="section-line"></div><span class="section-chevron" aria-hidden="true">▾</span>`;
+  // 버블 체크리스트 섹션 헤더 = "정점 근접도 n/5" 종합 배지 (bubble_checklist.json)
+  let sectionBadge = '';
+  if (sectionName === BUBBLE_SECTION && bubbleOverall) {
+    const st = bubbleOverall.red >= 2 ? 'alert'
+      : (bubbleOverall.red === 1 || bubbleOverall.warn >= 2 ? 'warn' : 'good');
+    const naTxt = bubbleOverall.judged < bubbleOverall.total
+      ? ` · 판정가능 ${bubbleOverall.judged}/${bubbleOverall.total}` : '';
+    sectionBadge = `<span class="section-badge state-${st}">${escapeHtml(bubbleOverall.label || '')}${naTxt}</span>`;
+  }
+  header.innerHTML = `<span class="section-num">${num}</span><span class="section-label">${escapeHtml(sectionName)}</span>${sectionBadge}<div class="section-line"></div><span class="section-chevron" aria-hidden="true">▾</span>`;
   header.setAttribute('role', 'button');
   header.setAttribute('tabindex', '0');
   header.setAttribute('aria-label', `${sectionName} 섹션 접기/펼치기`);
@@ -819,11 +828,46 @@ function ensureSection(sectionName, container) {
   return body;
 }
 
+/* ---- 버블 체크리스트 판정 (data/bubble_checklist.json) ----
+   버블 정점 5지표 자동판정 (김성환 '버블 템플릿'). 파이프라인 build_bubble()이
+   생성. 차트 카드 제목 옆 🟢/🟡/🔴 배지 + '버블 체크리스트' 섹션 헤더에
+   "정점 근접도 n/5" 종합 배지. 파일 없으면 배지 없이 렌더 (차트는 정상). */
+const BUBBLE_STATE_LABEL = { good: '정상', warn: '주의', alert: '정점 근접', na: '판정 불가' };
+const BUBBLE_SECTION = '버블 체크리스트';
+let bubbleOverall = null;          // {red, warn, judged, total, label}
+const bubbleByChart = new Map();   // chart id → item {state, emoji, caption, ...}
+
+async function loadBubbleChecklist() {
+  try {
+    const resp = await fetch('../data/bubble_checklist.json', { cache: 'no-store' });
+    if (!resp.ok) return;
+    const bb = await resp.json();
+    bubbleOverall = (bb && bb.overall) || null;
+    ((bb && bb.items) || []).forEach((it) => {
+      if (it && it.chart) bubbleByChart.set(it.chart, it);
+    });
+  } catch (e) {
+    console.warn('bubble_checklist.json 로드 실패 (판정 배지 생략):', e);
+  }
+}
+
+function bubbleState(state) {
+  return ['good', 'warn', 'alert', 'na'].includes(state) ? state : 'na';
+}
+
+function bubbleBadgeHtml(item) {
+  const state = bubbleState(item.state);
+  const label = BUBBLE_STATE_LABEL[state] || '';
+  return `<span class="bubble-badge state-${state}" title="${escapeHtml(item.caption || '')}">` +
+         `${item.emoji || ''} ${escapeHtml(label)}</span>`;
+}
+
 /* ---- Snapshot board — "아침 10초 확인" 카드 (data/snapshot.json) ---- */
 const SNAP_STATE_LABEL = { good: '양호', warn: '주의', alert: '경보', neutral: '' };
 
 function fmtSnapValue(v) {
   if (v === null || v === undefined) return '—';
+  if (Number.isInteger(v)) return String(v);  // 카운트류(버블 n/5, 로테이션 n주)는 소수점 없이
   if (Math.abs(v) >= 1000) return v.toLocaleString('en-US', { maximumFractionDigits: 1 });
   if (Math.abs(v) >= 100) return v.toFixed(1);
   return v.toFixed(2);
@@ -1021,13 +1065,17 @@ function createChartCard(meta, chartData) {
       ).join('')}</div>`
     : '';
 
+  // 버블 체크리스트 지표면 제목 옆 판정 배지 (툴팁 = 판정 근거 캡션)
+  const bubbleItem = bubbleByChart.get(meta.id);
+  const bubbleBadge = bubbleItem ? bubbleBadgeHtml(bubbleItem) : '';
+
   const dailyOn = isDailyChart(meta.id);
   card.innerHTML = `
     <button class="daily-star${dailyOn ? ' active' : ''}" data-chart-id="${escapeHtml(meta.id)}"
             aria-pressed="${dailyOn ? 'true' : 'false'}"
             title="${dailyOn ? '데일리 뷰에서 제외' : '데일리 뷰에 추가'}">${dailyOn ? '★' : '☆'}</button>
     <div class="chart-header">
-      <div class="chart-title">${escapeHtml(title)}</div>
+      <div class="chart-title">${escapeHtml(title)}${bubbleBadge}</div>
       ${subtitle ? `<div class="chart-subtitle">${escapeHtml(subtitle)}</div>` : ''}
     </div>
     ${bodyHtml}
@@ -1170,6 +1218,9 @@ async function init() {
     const indexResp = await fetch('../data/index.json', { cache: 'no-store' });
     if (!indexResp.ok) throw new Error(`index.json fetch failed: ${indexResp.status}`);
     const index = await indexResp.json();
+
+    // 버블 체크리스트 판정 로드 — 섹션 헤더/카드 배지가 참조하므로 렌더 전에 대기
+    await loadBubbleChecklist();
 
     // Update header last-updated
     const updatedEl = document.getElementById('header-updated');

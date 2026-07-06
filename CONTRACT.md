@@ -107,7 +107,7 @@ data/
 
 - 프론트(`charts.js`)는 각 차트 카드에 `id="card-<chart_id>"` 앵커를 부여한다. `link`는 이 앵커를 가리킨다.
 - 카드 클릭 시: 대상 차트가 접힌 섹션 안이면 섹션을 펼친 뒤 스크롤 + 하이라이트.
-- 카드 11종 (재료 차트 → 판정 로직):
+- 카드 12종 (재료 차트 → 판정 로직):
 
 | id          | 재료(data/*.json)      | 값 | 판정 |
 |-------------|------------------------|----|------|
@@ -121,7 +121,71 @@ data/
 | copper_gold | copper (구리/금 시리즈) | 최신값 | neutral, badge=3개월 방향 화살표(↑/→/↓), caption에 3개월 % |
 | credit      | credit_proxy           | HYG/LQD 최신값 | 3개월 −2% 이하 스트레스=warn / 그 외 정온=good |
 | rotation    | kr_foreign_flow + kr_rotation_check (+ vkospi 있으면) | 외인 연속 순매도 주 수 | 로테이션 끝 체크리스트: ①외인 주간(ISO주) 순매도 4주+ 연속 ②KOSPI 50일선 하회+거래량 급증(5일평균>20일평균) 동반 ③VKOSPI 60일 평균 대비 +30% 급등(데이터 있을 때만). 충족 0=🟢유지(good) / 1=🟡주의(warn) / 2+=🔴끝 경보(alert) |
+| bubble      | bubble_checklist       | 🔴 개수 (n/5) | 버블 체크리스트 종합(아래 "bubble_checklist.json" 절). 🔴 2개+=alert / 🔴 1개 or 🟡 2개+=warn / 그 외=good. caption에 5지표 이모지 나열 |
 | kr_fear_greed | kr_fear_greed          | 지수 최신값 (0~100 pt) | KOSPI 공포·탐욕 (수급 가중 산식 — "수급 차트" 절 참조). **역지표**: <25 극공포=warn(매수 후보 점검) / 25~45 공포=good(불안 생존=버블 아님, C2) / 45~55 중립=neutral / 55~75 탐욕=warn / >75 극탐욕=alert(장기화 시 단계적 매도 준비). VIX 카드(미국 심리)와 상보 |
+
+## bubble_checklist.json (버블 체크리스트 자동판정) — 규격 확장(파괴 아님)
+
+미국 증시 버블 정점 5지표 자동판정. 논지 출처: 신한투자증권 김성환
+"버블 템플릿: 2026-2027 미국 증시 버블 시나리오" (2025-08-19).
+snapshot과 동일 원칙 — 파이프라인이 **모든 차트 fetch 후, 생성된 data/*.json에서만 계산**해
+`data/bubble_checklist.json`으로 저장 (`run.py build_bubble()`, 추가 네트워크 없음).
+재료 없는 지표는 skip하지 않고 `state:"na"`(⚪ 판정 불가)로 남긴다 — 5지표 고정 표시.
+파일이 없으면 프론트는 배지 없이 차트만 렌더.
+
+```json
+{
+  "updated": "2026-07-06T18:00:00+09:00",
+  "overall": {
+    "red": 1,                       // 🔴 개수 = 정점 근접도 분자
+    "warn": 2,                      // 🟡 개수
+    "judged": 5,                    // 판정 가능했던 지표 수 (na 제외)
+    "total": 5,
+    "label": "정점 근접도 1/5"       // 섹션 헤더/스냅샷 배지 텍스트
+  },
+  "items": [
+    {
+      "chart": "margin_debt",       // 대상 차트 id (배지 부착 + #card-<id> 링크)
+      "label": "신용매수",           // 지표 이름
+      "state": "warn",              // "good" | "warn" | "alert" | "na"
+      "emoji": "🟡",                 // 🟢 정상 / 🟡 주의 / 🔴 정점 근접 / ⚪ 판정 불가
+      "value": 53.7, "unit": "%",   // 판정 근거 수치 (na면 null)
+      "caption": "margin debt 2년 저점 대비 +53.7% (기준 +50/+80 · 과거 정점 +90~100%)"
+    }
+  ]
+}
+```
+
+- 프론트(`charts.js`): ①"버블 체크리스트" 섹션 헤더에 `overall.label` 종합 배지
+  (🔴 2개+=alert / 🔴 1개 or 🟡 2개+=warn / 그 외=good — 스냅샷 bubble 카드와 동일 규칙)
+  ②각 지표 차트 카드 제목 옆 `emoji+상태` 배지, 툴팁=caption. ③스냅샷 보드 `bubble` 카드.
+- 5지표 판정 기준 (차트 subtitle에도 명시):
+
+| chart        | 지표 | 판정 (build_bubble) |
+|--------------|------|---------------------|
+| margin_debt  | ① 신용매수 | 직전 2년(24개월) 저점 대비 상승률: +50% 미만 🟢 / +50~80 🟡 / +80%↑ 🔴 (과거 정점 전부 +90~100% 상회) |
+| ipo_rs       | ② IPO 붐 | IPO ETF/S&P500 상대강도 6개월 변화율: +20% 미만 🟢 / +20~40 🟡 / +40%↑ 🔴 |
+| arkk_rs      | ③ 투기 강세 | ARKK/S&P500 상대강도 월간(월말값) 연속 아웃퍼폼: 6개월↑ 🟡 / 10개월↑(≈12개월 가까이) + 6개월 +40%↑ 급등 🔴 / 그 외 🟢. 러셀2000이 아니라 ARKK (김성환 명시) |
+| fed_funds    | ④ 긴축 전환 | FEDFUNDS: 인하/동결 🟢 / 최근 3개월 바닥 대비 +25bp 🟡 / 인하 사이클(24개월 바닥이 직전 정점 대비 -50bp↑) 후 바닥 대비 +25bp 인상 전환 확정 🔴 |
+| capex_margin | ⑤ 공급과잉 | Capex YoY(NEWORDER) 플러스인데 마진 프록시(CP/GDP) 2분기 연속 하락 🔴 / 최근 1분기 하락 🟡 / 그 외 🟢 — 논리 고정: "투자는 느는데 마진이 꺾인다" |
+
+## 버블 체크리스트 차트 (id 고정) — section "버블 체크리스트"
+
+index.json 순서상 **밸류에이션 다음, 이선엽 체인 앞**. 수집: fetch_finra.py(①) /
+fetch_yahoo.py(②③) / fetch_fred.py(④⑤).
+
+| id           | type       | source | 키필요 | 설명 |
+|--------------|------------|--------|--------|------|
+| margin_debt  | timeseries | finra  | N      | FINRA 마진 잔고(십억$) + 2년 저점 대비 상승률(%, yAxis 1, markLines +50/+80). 1차 소스=공식 xlsx(1997~현재 전체 히스토리, `finra.org/sites/default/files/2021-03/margin-statistics.xlsx` — URL의 2021-03은 최초 업로드 경로일 뿐 내용은 매월 갱신, 2026-07 확인). 2차 폴백=margin-statistics 페이지 HTML 표(최근 13개월, note에 주의 표기). xlsx는 inline-string 방식 → 의존성 없이 zipfile+ElementTree 파싱 |
+| ipo_rs       | timeseries | yahoo  | N      | IPO ETF("IPO")÷^GSPC 상대강도 index100 + 6개월 변화율(%, yAxis 1, markLines +20/+40), 3y |
+| arkk_rs      | timeseries | yahoo  | N      | ARKK÷^GSPC 상대강도 index100 1선, 5y (2020-21 버블 국면 비교) |
+| fed_funds    | timeseries | fred   | N*     | FEDFUNDS 실효 연방기금금리(월간, %), 1995~ |
+| capex_margin | timeseries | fred   | N*     | 비국방자본재 수주(NEWORDER) YoY%(axis 0, markLine 0선) + 기업이익마진 프록시 CP/GDP%(yAxis 1), 2000~ |
+
+- **N\* = FRED 키리스 폴백**: fed_funds/capex_margin은 FRED_API_KEY 있으면 정식 API,
+  없으면 `fredgraph.csv` 공개 CSV 엔드포인트(키 불필요)로 폴백해 **상시 ready**.
+  기존 FRED 차트(credit_hy_oas)의 "키 없으면 ready:false" 규칙은 그대로 유지.
+- 판정 배지는 데이터 파일이 아니라 `bubble_checklist.json`에서 온다 (위 절 참조).
 
 ## calendar.json (이번 주 일정+실적 카드) — 규격 확장(파괴 아님)
 
