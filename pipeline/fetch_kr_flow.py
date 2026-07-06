@@ -4,6 +4,10 @@ fetch_kr_flow.py — 한국 수급 데이터 수집 모듈 (섹션 "수급")
 로테이션(한국 주도주 장세) 끝 판정 재료:
   - kr_foreign_flow    : 외국인/기관 KOSPI 순매수 (일별 + 외국인 20일 누적) — Naver Finance
   - kr_rotation_check  : KOSPI 지수 + 50일선 + 거래량 — Yahoo Finance (^KS11)
+  - kr_fear_greed      : KOSPI 공포·탐욕 지수 (수급 가중 자체 산식, 0~100) — 위 두 소스 재사용
+
+네트워크 절약: Naver 수급 표와 ^KS11 다운로드는 모듈 캐시(_get_flow_df/_get_ks11)로
+1회만 수행하고 세 fetcher가 공유한다 (파이프라인 1회 실행 = 프로세스 1개 전제).
 
 소스 선정 경위 (2026-07-06):
   - pykrx(1.2.x)는 KRX_ID/KRX_PW 로그인 필수화, 구버전(1.0.x)도 KRX가 익명 접근을
@@ -103,13 +107,52 @@ def _fetch_naver_investor_flow(pages: int = 16) -> pd.DataFrame:
     return df.sort_index()
 
 
+# ─── 모듈 캐시 (파이프라인 1회 실행 내 fetcher 간 데이터 공유, 이중 fetch 방지) ───
+_FLOW_DF_CACHE: pd.DataFrame | None = None       # Naver 수급 (~280영업일)
+_KS11_CACHE: tuple[pd.Series, pd.Series] | None = None  # (close, volume) ~3y
+
+
+def _get_flow_df() -> pd.DataFrame:
+    """Naver 수급 표를 1회만 수집해 캐시. 28페이지 ≈ 280영업일 ≈ 13개월
+    (fear_greed 백분위 분포용 최근 1년 확보. kr_foreign_flow는 뒤 160일만 사용)."""
+    global _FLOW_DF_CACHE
+    if _FLOW_DF_CACHE is None:
+        _FLOW_DF_CACHE = _fetch_naver_investor_flow(pages=28)
+    return _FLOW_DF_CACHE
+
+
+def _get_ks11(lookback_years: int = 3) -> tuple[pd.Series, pd.Series]:
+    """^KS11 (close, volume)를 1회만 다운로드해 캐시 (rotation_check + fear_greed 공유)."""
+    global _KS11_CACHE
+    if _KS11_CACHE is None:
+        end = datetime.today()
+        start = end - timedelta(days=lookback_years * 365 + 100)  # MA 계산 여유분
+        raw = yf.download("^KS11", start=start.strftime("%Y-%m-%d"), end=None,
+                          auto_adjust=True, progress=False)
+        if raw.empty:
+            raise ValueError("^KS11 데이터 없음")
+        if isinstance(raw.columns, pd.MultiIndex):
+            close = raw["Close"].iloc[:, 0]
+            volume = raw["Volume"].iloc[:, 0]
+        else:
+            close = raw["Close"]
+            volume = raw["Volume"]
+        close = close.dropna()
+        close.index = pd.to_datetime(close.index).normalize()
+        volume = volume.dropna()
+        volume.index = pd.to_datetime(volume.index).normalize()
+        volume = volume[volume > 0]  # 휴일/미집계 0 방어
+        _KS11_CACHE = (close, volume)
+    return _KS11_CACHE
+
+
 def fetch_kr_foreign_flow() -> dict[str, Any]:
     """
     외국인/기관 KOSPI 순매수 (일별, 억원) + 외국인 20일 누적(우축).
     로테이션 끝 1번 신호(외국인 순매도 전환 + 4주 이상 지속) 판정 재료.
     """
     logger.info("한국 수급(외국인/기관 순매수, Naver) 데이터 수집 중...")
-    df = _fetch_naver_investor_flow(pages=16)  # ~160영업일 ≈ 7.5개월
+    df = _get_flow_df().tail(160)  # ~160영업일 ≈ 7.5개월 (기존 표시 범위 유지)
 
     foreign_cum20 = df["외국인"].rolling(window=20, min_periods=20).sum().dropna()
     logger.info(
@@ -152,25 +195,9 @@ def fetch_kr_rotation_check(lookback_years: int = 3) -> dict[str, Any]:
     로테이션 끝 2번 신호 재료. 소스: Yahoo ^KS11 (Close+Volume).
     """
     end = datetime.today()
-    start = end - timedelta(days=lookback_years * 365 + 100)  # MA50 계산 여유분
 
     logger.info("KOSPI 로테이션 체크(지수+50일선+거래량, ^KS11) 데이터 수집 중...")
-    raw = yf.download("^KS11", start=start.strftime("%Y-%m-%d"), end=None,
-                      auto_adjust=True, progress=False)
-    if raw.empty:
-        raise ValueError("kr_rotation_check: ^KS11 데이터 없음")
-    if isinstance(raw.columns, pd.MultiIndex):
-        close = raw["Close"].iloc[:, 0]
-        volume = raw["Volume"].iloc[:, 0]
-    else:
-        close = raw["Close"]
-        volume = raw["Volume"]
-
-    close = close.dropna()
-    close.index = pd.to_datetime(close.index).normalize()
-    volume = volume.dropna()
-    volume.index = pd.to_datetime(volume.index).normalize()
-    volume = volume[volume > 0]  # 휴일/미집계 0 방어
+    close, volume = _get_ks11(lookback_years)
 
     ma50 = close.rolling(window=50, min_periods=50).mean().dropna()
 
@@ -212,5 +239,115 @@ def fetch_kr_rotation_check(lookback_years: int = 3) -> dict[str, Any]:
             {"name": "KOSPI", "data": _series_to_pairs(close_t), "yAxis": 0},
             {"name": "50일선", "data": _series_to_pairs(ma50_t), "yAxis": 0},
             {"name": "거래량(백만주)", "data": _series_to_pairs(vol_t), "yAxis": 1},
+        ],
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# KOSPI 공포·탐욕 지수 (0~100) — 수급 가중 자체 산식
+#
+# 설계 원칙 (2026-03 X Research 설계 재개): 한국 시장은 외국인/기관 수급이
+# 가장 중요한 요인인데 해외 F&G 구현체(CNN 등)는 이를 과소 반영한다
+# → 수급 요인에 합산 55% 가중. 산식은 CONTRACT.md "수급 차트" 절에 문서화.
+#
+# 요인 5개 (각각 최근 1년 표본 내 백분위 0~100으로 정규화 후 가중평균):
+#   ① 외국인 20일 누적 순매수 (Naver)          w=0.35  ← 최대 가중
+#   ② 기관 20일 누적 순매수 (Naver)            w=0.20
+#   ③ KOSPI 50일선 이격도 (^KS11)              w=0.20
+#   ④ 20일 실현변동성 (^KS11, 역방향)          w=0.15  — VKOSPI 무키 부재 프록시
+#   ⑤ 52주 신고가 대비 위치 (^KS11)            w=0.10
+# 구간: <25 극공포 / 25~45 공포 / 45~55 중립 / 55~75 탐욕 / >75 극탐욕
+# ─────────────────────────────────────────────────────────────
+
+_FG_WEIGHTS = {"외국인": 0.35, "기관": 0.20, "모멘텀": 0.20, "변동성": 0.15, "52주": 0.10}
+
+
+def fg_zone(value: float) -> str:
+    """공포·탐욕 지수 구간 라벨 (snapshot 카드와 공유)."""
+    if value < 25:
+        return "극공포"
+    if value < 45:
+        return "공포"
+    if value <= 55:
+        return "중립"
+    if value <= 75:
+        return "탐욕"
+    return "극탐욕"
+
+
+def fetch_kr_fear_greed() -> dict[str, Any]:
+    """
+    KOSPI 공포·탐욕 지수 (0~100). 캐시된 Naver 수급 + ^KS11만 사용 (추가 fetch 없음).
+    각 요인을 최근 1년(수급 데이터 가용 범위) 표본 내 백분위로 정규화 후 가중평균.
+    """
+    logger.info("KOSPI 공포·탐욕 지수(수급 가중 산식) 계산 중...")
+    flow = _get_flow_df()          # ~280영업일 (Naver, 억원)
+    close, _ = _get_ks11()         # ~3y (^KS11 Close)
+
+    # ①② 수급: 20일 누적 순매수 (억원)
+    frn20 = flow["외국인"].rolling(window=20, min_periods=20).sum().dropna()
+    inst20 = flow["기관"].rolling(window=20, min_periods=20).sum().dropna()
+
+    # ③ 모멘텀: 50일선 이격도 (%)
+    ma50 = close.rolling(window=50, min_periods=50).mean()
+    momentum = (close / ma50 - 1) * 100
+
+    # ④ 변동성: 20일 실현변동성 (연율화 %, 역방향 — 급등 = 공포)
+    rvol = close.pct_change().rolling(window=20, min_periods=20).std() * (252 ** 0.5) * 100
+
+    # ⑤ 52주 신고가 대비 위치 (%)
+    pos52 = (close / close.rolling(window=252, min_periods=200).max()) * 100
+
+    # 정렬: 수급 20일 누적의 날짜(KRX 영업일, ~1년)를 기준 창으로 통일
+    base_idx = frn20.index
+    factors = pd.DataFrame({
+        "외국인": frn20,
+        "기관": inst20.reindex(base_idx),
+        "모멘텀": momentum.reindex(base_idx, method="ffill"),
+        "변동성": rvol.reindex(base_idx, method="ffill"),
+        "52주": pos52.reindex(base_idx, method="ffill"),
+    }).dropna()
+    if len(factors) < 120:
+        raise ValueError(f"kr_fear_greed: 표본 부족 ({len(factors)}일 < 120일)")
+
+    # 백분위 정규화 (표본 = 위 창 ≈ 최근 1년) → 가중평균
+    pct = factors.rank(pct=True) * 100
+    pct["변동성"] = 100 - pct["변동성"]  # 변동성 급등 = 공포 쪽
+    fg = sum(pct[name] * w for name, w in _FG_WEIGHTS.items()).round(1)
+
+    last_val = float(fg.iloc[-1])
+    logger.info(
+        f"  {len(fg)}영업일 (최신 {fg.index[-1].date()} = {last_val:.1f} [{fg_zone(last_val)}] / "
+        f"요인 백분위: " + ", ".join(f"{k} {pct[k].iloc[-1]:.0f}" for k in _FG_WEIGHTS)
+    )
+
+    return {
+        "id": "kr_fear_greed",
+        "type": "timeseries",
+        "title": "KOSPI 공포·탐욕 지수",
+        "subtitle": "수급 가중 자체 산식 (0~100) · 최근 1년",
+        "source": "Naver Finance + Yahoo Finance (^KS11) 자체 계산",
+        "unit": "pt",
+        "updated": _now_kst(),
+        "note": (
+            "[수급·심리] 한국 시장은 외국인/기관 수급이 제일 중요한데 해외 공포·탐욕 지수는 이를 "
+            "과소 반영한다 — 그래서 수급에 55%를 얹은 자체 산식: 외국인 20일 누적 순매수 35% + "
+            "기관 20일 누적 20% + KOSPI 50일선 이격도 20% + 20일 실현변동성(역방향) 15% + "
+            "52주 고점 대비 위치 10%, 각 요인을 최근 1년 분포 백분위로 정규화 후 가중평균. "
+            "구간: <25 극공포 / 25~45 공포 / 45~55 중립 / 55~75 탐욕 / >75 극탐욕. "
+            "[C2 버블 판별] 불안감이 살아있는 동안엔 버블이 아니다 — 극탐욕 구간 진입+지속이 "
+            "심리 역지표다. VIX 카드가 미국 심리라면 이 지수는 한국 수급 심리 — 둘은 상보 관계. "
+            "→ 행동: 극공포 진입 = 매수 후보 점검, 극탐욕 장기화 = 단계적 매도 준비, "
+            "중간 구간은 신호 아님(관망). "
+            "[한계] VKOSPI 무키 소스 부재로 변동성은 20일 실현변동성 프록시(내재변동성 아님). "
+            "수급은 Naver 비공식 집계(억원). 백분위 기준 분포가 최근 1년이라 표본 내 상대 위치 — "
+            "장기 사이클 극단과는 다를 수 있고, 과최적화를 피해 요인·가중치는 단순 고정."
+        ),
+        "markLines": [
+            {"value": 25, "label": "극공포", "axis": 0},
+            {"value": 75, "label": "극탐욕", "axis": 0},
+        ],
+        "series": [
+            {"name": "공포·탐욕 지수", "data": _series_to_pairs(fg)},
         ],
     }

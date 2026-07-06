@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T15:18:32+09:00",
+  "updated": "2026-07-06T15:26:28+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -30,6 +30,14 @@
     {
       "id": "kr_rotation_check",
       "file": "kr_rotation_check.json",
+      "type": "timeseries",
+      "section": "수급",
+      "ready": true,
+      "daily": false
+    },
+    {
+      "id": "kr_fear_greed",
+      "file": "kr_fear_greed.json",
       "type": "timeseries",
       "section": "수급",
       "ready": true,

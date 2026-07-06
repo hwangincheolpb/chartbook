@@ -134,6 +134,8 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
         # vkospi는 무키 소스 없음(KRX 로그인 필수화, Naver/Daum/Yahoo 미제공) → 미구현 (fetch_kr_flow.py 주석 참조)
         {"id": "kr_foreign_flow",   "file": "kr_foreign_flow.json",   "type": "timeseries", "section": "수급", "daily": True, "daily_order": 11},
         {"id": "kr_rotation_check", "file": "kr_rotation_check.json", "type": "timeseries", "section": "수급"},
+        # kr_fear_greed: 수급 가중 공포·탐욕 지수 — 데일리 시드 제외(스냅샷 카드로 충분, 차트는 전체 탭)
+        {"id": "kr_fear_greed",     "file": "kr_fear_greed.json",     "type": "timeseries", "section": "수급"},
         {"id": "vix",          "file": "vix.json",          "type": "timeseries",   "section": "리스크", "daily": True, "daily_order": 4},
         {"id": "sectors",      "file": "sectors.json",      "type": "heatmap_perf", "section": "섹터"},
         {"id": "valuation_pe", "file": "valuation_pe.json", "type": "timeseries",   "section": "밸류에이션"},
@@ -206,7 +208,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
 
 
 # ─────────────────────────────────────────────────────────────
-# 스냅샷 보드 (data/snapshot.json) — "아침 10초 확인"용 카드 10개.
+# 스냅샷 보드 (data/snapshot.json) — "아침 10초 확인"용 카드 11개.
 # 모든 차트 fetch가 끝난 뒤, 생성된 data/*.json에서만 계산한다
 # (추가 네트워크 호출 없음). 재료 없으면 해당 카드 skip.
 # 규격은 CONTRACT.md "snapshot.json" 참조.
@@ -284,7 +286,7 @@ def _arrow(chg: float | None) -> str:
 
 
 def build_snapshot(now: str) -> dict[str, Any]:
-    """생성된 data/*.json에서 아침 스냅샷 카드 10개를 계산."""
+    """생성된 data/*.json에서 아침 스냅샷 카드 11개를 계산."""
     cards: list[dict[str, Any]] = []
 
     def add(card: dict[str, Any] | None) -> None:
@@ -542,9 +544,38 @@ def build_snapshot(now: str) -> dict[str, Any]:
             "caption": caption, "link": "#card-kr_foreign_flow",
         }
 
+    # 10. 공포·탐욕 (KOSPI) — 수급 가중 자체 산식 (kr_fear_greed.json, 산식은 CONTRACT 참조).
+    #     역지표 판정: 극탐욕 진입+지속=alert(C2 버블 심리), 극공포=warn(매수 후보 점검),
+    #     공포=good(불안 생존=버블 아님), 중립/탐욕=neutral/warn. VIX 카드(미국 심리)와 상보.
+    def card_kr_fear_greed():
+        pairs = _series_pairs(_load_chart("kr_fear_greed"))
+        last = _latest(pairs)
+        if last is None:
+            return None
+        val = last[1]
+        if val < 25:
+            state, badge, action = "warn", "극공포", "매수 후보 점검"
+        elif val < 45:
+            state, badge, action = "good", "공포", "불안 생존=버블 아님"
+        elif val <= 55:
+            state, badge, action = "neutral", "중립", "관망"
+        elif val <= 75:
+            state, badge, action = "warn", "탐욕", "극탐욕 진입 감시"
+        else:
+            state, badge, action = "alert", "극탐욕", "장기화 시 단계적 매도 준비"
+        return {
+            "id": "kr_fear_greed", "label": "공포·탐욕", "value": round(val, 1), "unit": "pt",
+            "d1": _d1_pct(pairs), "state": state, "badge": badge,
+            "caption": (
+                f"{badge}({val:.0f}) — 수급 가중 KOSPI 심리(외인35%·기관20%) · "
+                f"극공포<25/극탐욕>75 · {action} · VIX(미국 심리)와 상보"
+            ),
+            "link": "#card-kr_fear_greed",
+        }
+
     for builder in (card_us10y, card_rate_scenario, card_spx_band, card_vix, card_move,
                     card_dxy, card_usdkrw, card_copper_gold, card_credit,
-                    card_rotation):
+                    card_rotation, card_kr_fear_greed):
         try:
             add(builder())
         except Exception as e:
@@ -593,7 +624,9 @@ def run() -> None:
             fetch_ls_rate_peak, fetch_ls_semi_vs_power, fetch_ls_memory_cycle,
             fetch_ls_taiwan_hedge, fetch_ls_ship_defense, fetch_move_index,
         )
-        from fetch_kr_flow import fetch_kr_foreign_flow, fetch_kr_rotation_check
+        from fetch_kr_flow import (
+            fetch_kr_foreign_flow, fetch_kr_rotation_check, fetch_kr_fear_greed,
+        )
         from fetch_multpl import fetch_all_multpl
     except ImportError:
         # run.py가 다른 디렉토리에서 실행될 때를 대비
@@ -608,7 +641,9 @@ def run() -> None:
             fetch_ls_rate_peak, fetch_ls_semi_vs_power, fetch_ls_memory_cycle,
             fetch_ls_taiwan_hedge, fetch_ls_ship_defense, fetch_move_index,
         )
-        from fetch_kr_flow import fetch_kr_foreign_flow, fetch_kr_rotation_check
+        from fetch_kr_flow import (
+            fetch_kr_foreign_flow, fetch_kr_rotation_check, fetch_kr_fear_greed,
+        )
         from fetch_multpl import fetch_all_multpl
 
     # ─── multpl.com 먼저 수집 (sp500 밸류밴드 재료 = EPS TTM) ───
@@ -646,8 +681,10 @@ def run() -> None:
         ("ls_ship_defense",  fetch_ls_ship_defense),
         ("move_index",       fetch_move_index),
         # 수급 (kr_foreign_flow=Naver, kr_rotation_check=Yahoo — fetch_kr_flow.py)
+        # kr_fear_greed는 앞 둘의 모듈 캐시(Naver 표+^KS11)를 재사용 — 추가 네트워크 없음
         ("kr_foreign_flow",   fetch_kr_foreign_flow),
         ("kr_rotation_check", fetch_kr_rotation_check),
+        ("kr_fear_greed",     fetch_kr_fear_greed),
     ]
 
     for chart_id, fetcher in yahoo_fetchers:
