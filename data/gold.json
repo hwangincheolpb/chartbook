@@ -5,7 +5,7 @@
   "subtitle": "Gold Futures (GC=F)",
   "source": "Yahoo Finance",
   "unit": "USD",
-  "updated": "2026-07-06T10:30:11+09:00",
+  "updated": "2026-07-06T11:20:28+09:00",
   "series": [
     {
       "name": "금 (Gold)",
@@ -6060,7 +6060,7 @@
         ],
         [
           "2026-07-05",
-          4202.0
+          4193.7998
         ]
       ]
     }

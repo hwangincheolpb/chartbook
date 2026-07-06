@@ -109,6 +109,8 @@ charts:
       sp500_eps: "https://www.multpl.com/s-p-500-earnings/table/by-month"
 
   # ─── 밸류에이션 (FRED 필요) ─────────────────────────────────
+  # [비활성 2026-07-06] buffett은 Valley AI 링크 카드(valley_buffett_link)로 대체.
+  # 스펙은 재활성화 대비 보존 — run.py chart_meta/RETIRED_IDS + fetch_fred.py 참조.
   - id: buffett
     section: "밸류에이션"
     type: timeseries

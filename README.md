@@ -1,8 +1,9 @@
 # Chartbook
 
 글로벌 주요 시장 지표를 매일 자동으로 수집·시각화하는 개인 차트북.
-S&P 500, KOSPI, VIX, 섹터 퍼포먼스, Buffett Indicator 등 핵심 차트를
-로컬 정적 사이트(HTML+JS)로 제공한다.
+S&P 500, KOSPI, VIX, 섹터 퍼포먼스, 채권/금리 등 핵심 차트를
+로컬 정적 사이트(HTML+JS)로 제공한다. Valley AI(valley.town)에 있는 기능
+(버핏지수·사이클 히트맵·13F 등)은 재개발하지 않고 링크 카드로 연결한다.
 
 ---
 
@@ -43,7 +44,7 @@ pip install -r pipeline/requirements.txt
 ### 2. FRED API 키 설정 (선택)
 
 FRED 키가 없으면 Yahoo Finance 차트(S&P 500, KOSPI, VIX, 섹터)는 정상 수집되고,
-FRED 기반 차트(Buffett Indicator 등)만 `ready: false`로 처리된다.
+FRED 기반 차트(하이일드 OAS)만 `ready: false`로 처리된다.
 
 ```bash
 cp .env.example .env

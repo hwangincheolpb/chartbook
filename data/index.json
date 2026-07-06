@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T10:30:01+09:00",
+  "updated": "2026-07-06T11:20:20+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -49,14 +49,6 @@
       "type": "timeseries",
       "section": "밸류에이션",
       "ready": true,
-      "daily": false
-    },
-    {
-      "id": "buffett",
-      "file": "buffett.json",
-      "type": "timeseries",
-      "section": "밸류에이션",
-      "ready": false,
       "daily": false
     },
     {
@@ -268,6 +260,66 @@
       "live": true,
       "source": "GitHub Pages",
       "note": "serve.sh 필요"
+    },
+    {
+      "id": "valley_buffett_link",
+      "type": "link",
+      "section": "밸류에이션",
+      "title": "버핏지수·자산군 밸류에이션",
+      "subtitle": "시총/GDP 버핏지수 + 자산군별 밸류에이션 대시보드",
+      "url": "https://www.valley.town/economy/asset-valuation/stock/buffett",
+      "live": true,
+      "source": "Valley AI (로그인 필요)"
+    },
+    {
+      "id": "valley_cycle_heatmap_link",
+      "type": "link",
+      "section": "매크로",
+      "title": "사이클 히트맵",
+      "subtitle": "경기 사이클 국면 히트맵",
+      "url": "https://www.valley.town/economy/business-cycles/heatmap",
+      "live": true,
+      "source": "Valley AI (로그인 필요)"
+    },
+    {
+      "id": "valley_econ_calendar_link",
+      "type": "link",
+      "section": "매크로",
+      "title": "경제지표 캘린더",
+      "subtitle": "경제지표·실적 발표 실시간 캘린더",
+      "url": "https://www.valley.town/economy/economic-calendar",
+      "live": true,
+      "source": "Valley AI (로그인 필요)"
+    },
+    {
+      "id": "valley_indicators_link",
+      "type": "link",
+      "section": "매크로",
+      "title": "경제지표 열람",
+      "subtitle": "FRED류 경제지표 커스텀 차트 시트",
+      "url": "https://www.valley.town/economy/indicators",
+      "live": true,
+      "source": "Valley AI (로그인 필요)"
+    },
+    {
+      "id": "valley_guru_13f_link",
+      "type": "link",
+      "section": "자금흐름",
+      "title": "거장 매매 (13F)",
+      "subtitle": "거장 포트폴리오·13F 매매 내역 추적",
+      "url": "https://www.valley.town/guru/transactions",
+      "live": true,
+      "source": "Valley AI (로그인 필요)"
+    },
+    {
+      "id": "valley_wsaj_column_link",
+      "type": "link",
+      "section": "주식시장",
+      "title": "월가아재 시황칼럼",
+      "subtitle": "출근길·퇴근길 시황 + 월가소식 기관뷰 요약",
+      "url": "https://www.valley.town/premium/wsaj-column",
+      "live": true,
+      "source": "Valley AI (로그인 필요)"
     }
   ]
 }

@@ -2,17 +2,14 @@
 fetch_fred.py — FRED (Federal Reserve Economic Data) 데이터 수집 모듈
 
 환경변수 FRED_API_KEY 필요. 없으면 모든 FRED 차트를 건너뛴다.
-이 모듈은 buffett 차트만 담당한다.
+이 모듈은 credit_hy_oas 차트를 담당한다.
 (valuation_pe / sp500_eps는 fetch_multpl.py에서 multpl.com을 스크래핑해 처리.
  FRED에는 Shiller CAPE / S&P 500 EPS 직접 시리즈가 없기 때문.)
 
-FRED 시리즈 선택 근거:
-  - buffett:      실제 FRED 시리즈 사용:
-                  - WILL5000PRFC (Wilshire 5000 Full Cap Index, 분기별)
-                  - GDP (Nominal GDP, 십억달러, 분기별)
-                  Buffett Indicator ≈ WILL5000PRFC / GDP × 100
-                  (순수 시총 달러값인 WILL5000IND 대신 PRFC 인덱스 사용.
-                   절대값보다 트렌드·방향성 파악이 목적이므로 실용적으로 충분.)
+buffett 차트는 Valley AI 링크 카드(run.py LINK_CARDS의 valley_buffett_link)로
+대체되어 비활성 (2026-07-06). fetch_buffett 함수는 재활성화 대비로 남겨둠 —
+살리려면 fetch_all_fred의 fred_fetchers에 ("buffett", fetch_buffett) 복귀
++ run.py chart_meta/RETIRED_IDS 되돌리기.
 """
 
 import logging
@@ -89,6 +86,7 @@ def _series_to_pairs(series: pd.Series) -> list[list]:
 
 def fetch_buffett(api_key: str) -> dict[str, Any]:
     """
+    [비활성 2026-07-06] Valley AI 링크 카드로 대체 — fetch_all_fred에서 제외됨.
     Buffett Indicator = Wilshire 5000 (WILL5000PRFC) / GDP × 100.
     두 시리즈 모두 분기별 데이터. 날짜 기준으로 inner join 후 비율 계산.
     """
@@ -153,13 +151,14 @@ def fetch_credit_hy_oas(api_key: str) -> dict[str, Any]:
 
 def fetch_all_fred() -> dict[str, dict[str, Any]]:
     """
-    FRED 차트 전체를 수집한다. (buffett, credit_hy_oas 담당)
+    FRED 차트 전체를 수집한다. (credit_hy_oas 담당)
     Returns: {chart_id: result_dict or {"_skip": True, "_reason": ...}}
 
     FRED_API_KEY가 없거나 오류 발생 시 해당 차트를 skip 처리한다.
 
     참고: valuation_pe / sp500_eps는 FRED에 직접 시리즈가 없어
           fetch_multpl.py (multpl.com 스크래핑)에서 담당한다.
+          buffett은 Valley AI 링크로 대체 → 비활성 (모듈 docstring 참조).
     """
     api_key = _get_api_key()
     results: dict[str, dict[str, Any]] = {}
@@ -167,7 +166,7 @@ def fetch_all_fred() -> dict[str, dict[str, Any]]:
     # FRED API 키 없으면 모든 FRED 차트 skip
     if not api_key:
         logger.warning("FRED_API_KEY 미설정 → 모든 FRED 차트 건너뜀")
-        for cid in ("buffett", "credit_hy_oas"):
+        for cid in ("credit_hy_oas",):
             results[cid] = {
                 "_skip": True,
                 "_reason": "FRED_API_KEY 환경변수 미설정",
@@ -175,8 +174,8 @@ def fetch_all_fred() -> dict[str, dict[str, Any]]:
         return results
 
     # 키가 있으면 각 차트 수집 시도 (개별 실패는 graceful skip)
+    # buffett은 Valley 링크 대체로 제외 (재활성화 방법은 모듈 docstring)
     fred_fetchers = [
-        ("buffett", fetch_buffett),
         ("credit_hy_oas", fetch_credit_hy_oas),
     ]
     for cid, fetcher in fred_fetchers:

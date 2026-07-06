@@ -6,7 +6,7 @@ run.py — Chartbook 데이터 파이프라인 오케스트레이터
 
 동작:
     1. Yahoo Finance 차트 수집 (SP500, KOSPI, VIX, 섹터)
-    2. FRED 차트 수집 (Buffett Indicator; FRED_API_KEY 있을 때만)
+    2. FRED 차트 수집 (하이일드 OAS; FRED_API_KEY 있을 때만)
     3. data/<id>.json 파일 저장
     4. data/index.json 업데이트 (ready 플래그 포함)
     5. 수집 결과 요약 출력
@@ -81,7 +81,38 @@ LINK_CARDS = [
      "title": "브라질 국채 교체매매", "subtitle": "27Y/29Y → 37Y 교체매매 전략",
      "url": f"http://localhost:{SERVE_PORT}/financial-products/brazil-bond/", "live": True,
      "source": "GitHub Pages", "note": "serve.sh 필요"},
+    # ─── Valley AI (valley.town) — 평생무료 계정 보유. 원칙(2026-07-06):
+    # Valley에 있는 기능은 재개발하지 않고 링크로 단다. 로그인 필요.
+    {"id": "valley_buffett_link", "type": "link", "section": "밸류에이션",
+     "title": "버핏지수·자산군 밸류에이션", "subtitle": "시총/GDP 버핏지수 + 자산군별 밸류에이션 대시보드",
+     "url": "https://www.valley.town/economy/asset-valuation/stock/buffett", "live": True,
+     "source": "Valley AI (로그인 필요)"},
+    {"id": "valley_cycle_heatmap_link", "type": "link", "section": "매크로",
+     "title": "사이클 히트맵", "subtitle": "경기 사이클 국면 히트맵",
+     "url": "https://www.valley.town/economy/business-cycles/heatmap", "live": True,
+     "source": "Valley AI (로그인 필요)"},
+    {"id": "valley_econ_calendar_link", "type": "link", "section": "매크로",
+     "title": "경제지표 캘린더", "subtitle": "경제지표·실적 발표 실시간 캘린더",
+     "url": "https://www.valley.town/economy/economic-calendar", "live": True,
+     "source": "Valley AI (로그인 필요)"},
+    {"id": "valley_indicators_link", "type": "link", "section": "매크로",
+     "title": "경제지표 열람", "subtitle": "FRED류 경제지표 커스텀 차트 시트",
+     "url": "https://www.valley.town/economy/indicators", "live": True,
+     "source": "Valley AI (로그인 필요)"},
+    {"id": "valley_guru_13f_link", "type": "link", "section": "자금흐름",
+     "title": "거장 매매 (13F)", "subtitle": "거장 포트폴리오·13F 매매 내역 추적",
+     "url": "https://www.valley.town/guru/transactions", "live": True,
+     "source": "Valley AI (로그인 필요)"},
+    {"id": "valley_wsaj_column_link", "type": "link", "section": "주식시장",
+     "title": "월가아재 시황칼럼", "subtitle": "출근길·퇴근길 시황 + 월가소식 기관뷰 요약",
+     "url": "https://www.valley.town/premium/wsaj-column", "live": True,
+     "source": "Valley AI (로그인 필요)"},
 ]
+
+# 은퇴한 차트 id — index 재생성 시 기존 index.json에서 넘어와도 버린다.
+# buffett: FRED 키 대기 placeholder였으나 Valley AI 링크 카드(valley_buffett_link)로
+# 대체 (2026-07-06). 재활성화하려면 여기서 빼고 chart_meta + fetch_fred 복귀.
+RETIRED_IDS = {"buffett"}
 
 
 def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]:
@@ -103,7 +134,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
         {"id": "sectors",      "file": "sectors.json",      "type": "heatmap_perf", "section": "섹터"},
         {"id": "valuation_pe", "file": "valuation_pe.json", "type": "timeseries",   "section": "밸류에이션"},
         {"id": "sp500_eps",    "file": "sp500_eps.json",    "type": "timeseries",   "section": "밸류에이션"},
-        {"id": "buffett",      "file": "buffett.json",      "type": "timeseries",   "section": "밸류에이션"},
+        # buffett: Valley AI 링크(valley_buffett_link)로 대체 — RETIRED_IDS 참조.
         # ─── 이선엽 체인 (framework §7 논지 체인, 채권/금리 앞 배치) ─
         {"id": "ls_rate_peak",     "file": "ls_rate_peak.json",     "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 1},
         {"id": "ls_semi_vs_power", "file": "ls_semi_vs_power.json", "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 6},
@@ -156,8 +187,8 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
         existing = json.loads((DATA_DIR / "index.json").read_text(encoding="utf-8"))
         for c in existing.get("charts", []):
             cid = c.get("id")
-            if cid in pipeline_ids or cid in link_by_id:
-                continue  # 파이프라인 소유 or 기본 링크 카드 → 위에서 생성됨
+            if cid in pipeline_ids or cid in link_by_id or cid in RETIRED_IDS:
+                continue  # 파이프라인 소유 or 기본 링크 카드 or 은퇴 차트 → 보존 안 함
             if c.get("type") == "link":
                 link_by_id[cid] = c
             else:
@@ -527,7 +558,7 @@ def run() -> None:
     # 실제 수집은 위(yahoo 루프 전)에서 완료 — sp500 밸류밴드 재료 공유.
     process_results(multpl_results)
 
-    # ─── FRED 차트 수집 (buffett) ───────────────────────────────
+    # ─── FRED 차트 수집 (credit_hy_oas) ─────────────────────────
     try:
         from fetch_fred import fetch_all_fred
     except ImportError:

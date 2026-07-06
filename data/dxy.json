@@ -5,7 +5,7 @@
   "subtitle": "US Dollar Index",
   "source": "Yahoo Finance",
   "unit": "index",
-  "updated": "2026-07-06T10:30:10+09:00",
+  "updated": "2026-07-06T11:20:27+09:00",
   "series": [
     {
       "name": "달러 인덱스",
@@ -6060,7 +6060,7 @@
         ],
         [
           "2026-07-05",
-          100.907
+          100.968
         ]
       ]
     }
