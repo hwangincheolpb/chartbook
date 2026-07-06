@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T11:20:20+09:00",
+  "updated": "2026-07-06T15:12:15+09:00",
   "cards": [
     {
       "id": "us10y",
@@ -48,9 +48,9 @@
     {
       "id": "dxy",
       "label": "달러 인덱스",
-      "value": 100.97,
+      "value": 100.86,
       "unit": "",
-      "d1": 0.11,
+      "d1": -0.52,
       "state": "neutral",
       "badge": "",
       "caption": "DXY — 달러 강세=신흥국·원자재 역풍",
@@ -70,12 +70,12 @@
     {
       "id": "copper_gold",
       "label": "구리/금 비율",
-      "value": 1.488,
+      "value": 1.487,
       "unit": "",
-      "d1": 0.08,
+      "d1": -1.23,
       "state": "neutral",
       "badge": "↑",
-      "caption": "3개월 ↑ +24.1% — 상승=성장·금리 상방 (건들락)",
+      "caption": "3개월 ↑ +24.3% — 상승=성장·금리 상방 (건들락)",
       "link": "#card-copper"
     },
     {
@@ -88,6 +88,17 @@
       "badge": "정온",
       "caption": "3개월 → +0.9% — 하락=크레딧 스트레스",
       "link": "#card-credit_proxy"
+    },
+    {
+      "id": "rotation",
+      "label": "로테이션 신호",
+      "value": 3,
+      "unit": "주",
+      "d1": null,
+      "state": "good",
+      "badge": "유지",
+      "caption": "외인 순매도 3주 연속(기준 4주) · 50일선 상회·거래량 보통 — 충족 0개 (1개=주의/2개+=끝)",
+      "link": "#card-kr_foreign_flow"
     }
   ]
 }

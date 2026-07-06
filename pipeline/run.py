@@ -130,6 +130,10 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
     chart_meta = [
         {"id": "sp500",        "file": "sp500.json",        "type": "timeseries",   "section": "주식시장", "daily": True, "daily_order": 3},
         {"id": "kospi",        "file": "kospi.json",        "type": "timeseries",   "section": "한국"},
+        # ─── 수급 (로테이션 끝 판정 재료 — 스냅샷 '로테이션 신호' 카드 연동) ─
+        # vkospi는 무키 소스 없음(KRX 로그인 필수화, Naver/Daum/Yahoo 미제공) → 미구현 (fetch_kr_flow.py 주석 참조)
+        {"id": "kr_foreign_flow",   "file": "kr_foreign_flow.json",   "type": "timeseries", "section": "수급", "daily": True, "daily_order": 11},
+        {"id": "kr_rotation_check", "file": "kr_rotation_check.json", "type": "timeseries", "section": "수급"},
         {"id": "vix",          "file": "vix.json",          "type": "timeseries",   "section": "리스크", "daily": True, "daily_order": 4},
         {"id": "sectors",      "file": "sectors.json",      "type": "heatmap_perf", "section": "섹터"},
         {"id": "valuation_pe", "file": "valuation_pe.json", "type": "timeseries",   "section": "밸류에이션"},
@@ -202,7 +206,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
 
 
 # ─────────────────────────────────────────────────────────────
-# 스냅샷 보드 (data/snapshot.json) — "아침 10초 확인"용 카드 8개.
+# 스냅샷 보드 (data/snapshot.json) — "아침 10초 확인"용 카드 9개.
 # 모든 차트 fetch가 끝난 뒤, 생성된 data/*.json에서만 계산한다
 # (추가 네트워크 호출 없음). 재료 없으면 해당 카드 skip.
 # 규격은 CONTRACT.md "snapshot.json" 참조.
@@ -280,7 +284,7 @@ def _arrow(chg: float | None) -> str:
 
 
 def build_snapshot(now: str) -> dict[str, Any]:
-    """생성된 data/*.json에서 아침 스냅샷 카드 8개를 계산."""
+    """생성된 data/*.json에서 아침 스냅샷 카드 9개를 계산."""
     cards: list[dict[str, Any]] = []
 
     def add(card: dict[str, Any] | None) -> None:
@@ -423,8 +427,78 @@ def build_snapshot(now: str) -> dict[str, Any]:
             "link": "#card-credit_proxy",
         }
 
+    # 9. 로테이션 신호 — 로테이션(한국 주도주 장세) 끝 판정 종합 배지.
+    #    체크리스트(단순 규칙): ①외국인 주간 순매도 4주 이상 연속 ②KOSPI 50일선
+    #    거래량 동반 붕괴 ③VKOSPI 급등. 충족 0개=🟢유지 / 1개=🟡주의 / 2개 이상=🔴끝.
+    #    ③은 vkospi.json이 있을 때만 평가 (현재 무키 소스 없음 → 2개 조건으로 판정).
+    def card_rotation():
+        frn = _series_pairs(_load_chart("kr_foreign_flow"), "외국인 일별")
+        rot = _load_chart("kr_rotation_check")
+        kospi = _series_pairs(rot, "KOSPI")
+        ma50 = _series_pairs(rot, "50일선")
+        vol = _series_pairs(rot, "거래량")
+        if not frn or not kospi or not ma50:
+            return None
+
+        # ① 외국인 주간(ISO주) 순매수 합계 → 최신 주부터 거꾸로 연속 순매도 주 수
+        weekly: dict[tuple[int, int], float] = {}
+        for d, v in frn:
+            if v is None:
+                continue
+            iso = datetime.strptime(d, "%Y-%m-%d").isocalendar()
+            weekly[(iso[0], iso[1])] = weekly.get((iso[0], iso[1]), 0.0) + float(v)
+        neg_weeks = 0
+        for _, wsum in sorted(weekly.items(), reverse=True):
+            if wsum < 0:
+                neg_weeks += 1
+            else:
+                break
+        cond_foreign = neg_weeks >= 4
+
+        # ② 50일선 하회 + 거래량 동반 (최근 5일 평균 거래량 > 20일 평균)
+        k_last, m_last = _latest(kospi), _latest(ma50)
+        below_ma = k_last[1] < m_last[1] if (k_last and m_last) else False
+        vols = [v for _, v in vol if v is not None]
+        vol_up = (len(vols) >= 20 and
+                  sum(vols[-5:]) / 5 > sum(vols[-20:]) / 20)
+        cond_break = below_ma and vol_up
+
+        conds = [cond_foreign, cond_break]
+
+        # ③ VKOSPI 급등 (데이터 있을 때만): 최신값이 60일 평균 대비 +30% 이상
+        vk = _series_pairs(_load_chart("vkospi"))
+        vk_txt = ""
+        if vk:
+            vk_vals = [v for _, v in vk if v is not None]
+            if len(vk_vals) >= 60:
+                vk_avg = sum(vk_vals[-60:]) / 60
+                cond_vk = vk_avg > 0 and vk_vals[-1] / vk_avg >= 1.3
+                conds.append(cond_vk)
+                vk_txt = f" · VKOSPI {'급등' if cond_vk else '안정'}"
+
+        n_hit = sum(conds)
+        if n_hit == 0:
+            state, badge = "good", "유지"
+        elif n_hit == 1:
+            state, badge = "warn", "주의"
+        else:
+            state, badge = "alert", "끝 경보"
+
+        caption = (
+            f"외인 순매도 {neg_weeks}주 연속(기준 4주)"
+            f" · 50일선 {'하회' if below_ma else '상회'}"
+            f"·거래량 {'급증' if vol_up else '보통'}{vk_txt}"
+            f" — 충족 {n_hit}개 (1개=주의/2개+=끝)"
+        )
+        return {
+            "id": "rotation", "label": "로테이션 신호", "value": neg_weeks, "unit": "주",
+            "d1": None, "state": state, "badge": badge,
+            "caption": caption, "link": "#card-kr_foreign_flow",
+        }
+
     for builder in (card_us10y, card_spx_band, card_vix, card_move,
-                    card_dxy, card_usdkrw, card_copper_gold, card_credit):
+                    card_dxy, card_usdkrw, card_copper_gold, card_credit,
+                    card_rotation):
         try:
             add(builder())
         except Exception as e:
@@ -473,6 +547,7 @@ def run() -> None:
             fetch_ls_rate_peak, fetch_ls_semi_vs_power, fetch_ls_memory_cycle,
             fetch_ls_taiwan_hedge, fetch_ls_ship_defense, fetch_move_index,
         )
+        from fetch_kr_flow import fetch_kr_foreign_flow, fetch_kr_rotation_check
         from fetch_multpl import fetch_all_multpl
     except ImportError:
         # run.py가 다른 디렉토리에서 실행될 때를 대비
@@ -487,6 +562,7 @@ def run() -> None:
             fetch_ls_rate_peak, fetch_ls_semi_vs_power, fetch_ls_memory_cycle,
             fetch_ls_taiwan_hedge, fetch_ls_ship_defense, fetch_move_index,
         )
+        from fetch_kr_flow import fetch_kr_foreign_flow, fetch_kr_rotation_check
         from fetch_multpl import fetch_all_multpl
 
     # ─── multpl.com 먼저 수집 (sp500 밸류밴드 재료 = EPS TTM) ───
@@ -523,6 +599,9 @@ def run() -> None:
         ("ls_taiwan_hedge",  fetch_ls_taiwan_hedge),
         ("ls_ship_defense",  fetch_ls_ship_defense),
         ("move_index",       fetch_move_index),
+        # 수급 (kr_foreign_flow=Naver, kr_rotation_check=Yahoo — fetch_kr_flow.py)
+        ("kr_foreign_flow",   fetch_kr_foreign_flow),
+        ("kr_rotation_check", fetch_kr_rotation_check),
     ]
 
     for chart_id, fetcher in yahoo_fetchers:

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T11:20:20+09:00",
+  "updated": "2026-07-06T15:12:15+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -15,6 +15,23 @@
       "file": "kospi.json",
       "type": "timeseries",
       "section": "한국",
+      "ready": true,
+      "daily": false
+    },
+    {
+      "id": "kr_foreign_flow",
+      "file": "kr_foreign_flow.json",
+      "type": "timeseries",
+      "section": "수급",
+      "ready": true,
+      "daily": true,
+      "dailyOrder": 11
+    },
+    {
+      "id": "kr_rotation_check",
+      "file": "kr_rotation_check.json",
+      "type": "timeseries",
+      "section": "수급",
       "ready": true,
       "daily": false
     },
