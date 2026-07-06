@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T15:12:15+09:00",
+  "updated": "2026-07-06T15:18:32+09:00",
   "cards": [
     {
       "id": "us10y",
@@ -10,6 +10,17 @@
       "state": "good",
       "badge": "여유",
       "caption": "CTA 손절선 4.85%까지 +0.36%p",
+      "link": "#card-ls_rate_peak"
+    },
+    {
+      "id": "rate_scenario",
+      "label": "금리 시나리오 A/B",
+      "value": 4.485,
+      "unit": "%",
+      "d1": 0.22,
+      "state": "alert",
+      "badge": "A 매파 재프라이싱",
+      "caption": "4.40 상향 안착(종가 3영업일 연속) · A선 4.40까지 -8bp·B선 4.30까지 -19bp → A 확정 시 분할 진입·전제 깨지면 기계적 손절, B 확정 시 되돌림 포지션 유지",
       "link": "#card-ls_rate_peak"
     },
     {

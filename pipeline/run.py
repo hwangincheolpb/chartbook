@@ -206,7 +206,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
 
 
 # ─────────────────────────────────────────────────────────────
-# 스냅샷 보드 (data/snapshot.json) — "아침 10초 확인"용 카드 9개.
+# 스냅샷 보드 (data/snapshot.json) — "아침 10초 확인"용 카드 10개.
 # 모든 차트 fetch가 끝난 뒤, 생성된 data/*.json에서만 계산한다
 # (추가 네트워크 호출 없음). 재료 없으면 해당 카드 skip.
 # 규격은 CONTRACT.md "snapshot.json" 참조.
@@ -284,7 +284,7 @@ def _arrow(chg: float | None) -> str:
 
 
 def build_snapshot(now: str) -> dict[str, Any]:
-    """생성된 data/*.json에서 아침 스냅샷 카드 9개를 계산."""
+    """생성된 data/*.json에서 아침 스냅샷 카드 10개를 계산."""
     cards: list[dict[str, Any]] = []
 
     def add(card: dict[str, Any] | None) -> None:
@@ -311,6 +311,52 @@ def build_snapshot(now: str) -> dict[str, Any]:
             "d1": _d1_pct(pairs), "state": state, "badge": badge,
             "caption": f"CTA 손절선 4.85%까지 {dist:+.2f}%p",
             "link": "#card-ls_rate_peak",
+        }
+
+    # 1-b. 금리 시나리오 A/B — 트레이드 플랜 트리거 (규격/정의는 CONTRACT "rate_scenario" 행 참조)
+    #   A=매파 재프라이싱: 10Y 4.40% 상향 안착(안착 = 종가 3영업일 연속 ≥4.40)
+    #   B=되돌림 지속: 10Y 4.30% 하향 이탈. 사이 = 중립(관망).
+    #   보조신호(베어플래트닝): 2Y 무키 소스 없음 → 10Y-3M 스프레드(yield_spread)로 근사.
+    #   "10Y 5영업일 상승 + 스프레드 5영업일 축소 동시"면 플래트닝 주의 문구. 2Y 정식판은 FRED 키 이후.
+    def card_rate_scenario():
+        pairs = _series_pairs(_load_chart("ls_rate_peak"), "10Y") \
+            or _series_pairs(_load_chart("ust_yields"), "10Y")
+        last = _latest(pairs)
+        if last is None:
+            return None
+        val = last[1]
+        vals = [float(v) for _, v in pairs if v is not None]
+
+        if len(vals) >= 3 and all(v >= 4.40 for v in vals[-3:]):
+            state, badge = "alert", "A 매파 재프라이싱"
+            judge = "4.40 상향 안착(종가 3영업일 연속)"
+        elif val >= 4.40:
+            state, badge = "warn", "A 안착 대기"
+            judge = "4.40 상회 — 안착(종가 3영업일 연속) 확인 중"
+        elif val <= 4.30:
+            state, badge = "alert", "B 되돌림"
+            judge = "4.30 하향 이탈"
+        else:
+            state, badge = "neutral", "중립(관망)"
+            judge = "4.30~4.40 사이"
+
+        # 베어플래트닝 근사: 10Y 5영업일 상승 + 10Y-3M 스프레드 5영업일 축소 동시
+        flat_txt = ""
+        sp_vals = [float(v) for _, v in _series_pairs(_load_chart("yield_spread"), "10Y-3M")
+                   if v is not None]
+        if len(vals) >= 6 and len(sp_vals) >= 6 and vals[-1] > vals[-6] and sp_vals[-1] < sp_vals[-6]:
+            flat_txt = " · 10Y 상승+10Y-3M 축소 = 플래트닝 주의(2Y 근사)"
+
+        dist_a = (4.40 - val) * 100  # A선까지 bp (음수 = 이미 상회)
+        dist_b = (4.30 - val) * 100  # B선까지 bp (음수 = 하향 이탈까지 남은 폭)
+        caption = (
+            f"{judge} · A선 4.40까지 {dist_a:+.0f}bp·B선 4.30까지 {dist_b:+.0f}bp{flat_txt}"
+            " → A 확정 시 분할 진입·전제 깨지면 기계적 손절, B 확정 시 되돌림 포지션 유지"
+        )
+        return {
+            "id": "rate_scenario", "label": "금리 시나리오 A/B", "value": round(val, 3), "unit": "%",
+            "d1": _d1_pct(pairs), "state": state, "badge": badge,
+            "caption": caption, "link": "#card-ls_rate_peak",
         }
 
     # 2. S&P500 vs 21x 밴드 상단 — >1.0 = 드림장
@@ -496,7 +542,7 @@ def build_snapshot(now: str) -> dict[str, Any]:
             "caption": caption, "link": "#card-kr_foreign_flow",
         }
 
-    for builder in (card_us10y, card_spx_band, card_vix, card_move,
+    for builder in (card_us10y, card_rate_scenario, card_spx_band, card_vix, card_move,
                     card_dxy, card_usdkrw, card_copper_gold, card_credit,
                     card_rotation):
         try:

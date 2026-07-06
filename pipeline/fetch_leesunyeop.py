@@ -84,7 +84,7 @@ def fetch_ls_rate_peak(lookback_years: int = _MACRO_LOOKBACK_YEARS) -> dict[str,
         "id": "ls_rate_peak",
         "type": "timeseries",
         "title": "금리 정점 체인 — 10Y × 유가",
-        "subtitle": "미국채 10Y(%) + WTI($, 우축) · 4.85% = CTA 손절선",
+        "subtitle": "미국채 10Y(%) + WTI($, 우축) · 4.85% = CTA 손절선 · 4.40/4.30 = 시나리오 A/B선",
         "source": "Yahoo Finance",
         "unit": "%",
         "unit2": "USD",
@@ -92,6 +92,8 @@ def fetch_ls_rate_peak(lookback_years: int = _MACRO_LOOKBACK_YEARS) -> dict[str,
         "markLines": [
             {"value": 4.85, "label": "CTA 손절선", "axis": 0},
             {"value": 5.5, "label": "구조 경보", "axis": 0},
+            {"value": 4.40, "label": "시나리오 A선", "axis": 0},
+            {"value": 4.30, "label": "시나리오 B선", "axis": 0},
         ],
         "note": (
             "[C1 금리 정점] 물가의 실체는 유가, 유가의 실체는 호르무즈. 유가가 꺾이면 지난달 물가가 "
@@ -99,6 +101,11 @@ def fetch_ls_rate_peak(lookback_years: int = _MACRO_LOOKBACK_YEARS) -> dict[str,
             "연쇄가 만든 노이즈. 5.5% = 구조 경보 — 여기 정착하면 노이즈가 아니라 구조 문제. "
             "→ 행동: 4.85 돌파發 조정은 매수 기회로 분류, 인상 후 동결 전환 확인 시 정점 확정 — 채권은 "
             "정점 부근 익절 회전. "
+            "[시나리오 A/B] A=매파 재프라이싱: 10Y 4.40% 상향 안착(종가 3영업일 연속) 시 — 연준 매파 "
+            "전환을 시장이 덜 반영해 재프라이싱. B=되돌림 지속: 4.30% 하향 이탈 시. A 임박 보조신호는 "
+            "단기금리 선행 상승 + 커브 베어플래트닝(2Y 무키 소스 부재로 10Y-3M 스프레드 축소로 근사). "
+            "→ 행동: 트리거 확인 후 분할 진입 — A 확정 시 분할 진입·전제(금리 레벨) 깨지면 기계적 손절, "
+            "B 확정 시 되돌림 포지션 유지. "
             "[출처] 이선엽 프레임워크 §2-C1·§3 (금리 정점 체인) — 임계선 4.85%(CTA 손절선)·5.5%(구조 경보). "
             "[한계] 10Y는 야후 ^TNX(원 스펙 FRED DGS10 대체), 유가는 WTI 근월물 선물 — 현물과 스프레드 존재."
         ),

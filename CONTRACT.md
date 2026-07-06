@@ -107,11 +107,12 @@ data/
 
 - 프론트(`charts.js`)는 각 차트 카드에 `id="card-<chart_id>"` 앵커를 부여한다. `link`는 이 앵커를 가리킨다.
 - 카드 클릭 시: 대상 차트가 접힌 섹션 안이면 섹션을 펼친 뒤 스크롤 + 하이라이트.
-- 카드 9종 (재료 차트 → 판정 로직):
+- 카드 10종 (재료 차트 → 판정 로직):
 
 | id          | 재료(data/*.json)      | 값 | 판정 |
 |-------------|------------------------|----|------|
 | us10y       | ls_rate_peak (폴백 ust_yields) | 10Y 최신 % | 4.85 미만 여유=good / 0.2%p 이내 근접=warn / 돌파=alert. caption에 CTA까지 거리 |
+| rate_scenario | ls_rate_peak (폴백 ust_yields) + yield_spread(보조) | 10Y 최신 % | 금리 시나리오 A/B 트리거 (6/29 트레이드 플랜). **A=매파 재프라이싱**: 10Y 4.40% 상향 **안착** 시 — 안착 정의 = **종가 3영업일 연속 ≥4.40** → alert / 4.40 상회했으나 3영업일 미충족 = "A 안착 대기"=warn / **B=되돌림 지속**: 4.30% 하향 이탈(≤4.30) → alert / 사이 = 중립(관망)=neutral. caption에 4.40·4.30까지 거리(bp) + 행동(A 확정 시 분할 진입·전제 깨지면 기계적 손절, B 확정 시 되돌림 포지션 유지). **베어플래트닝 보조신호**: 2Y가 yfinance 무키 소스에 없음(^TNX/^FVX/^TYX/^IRX만) → 10Y-3M 스프레드(yield_spread)로 근사 — "10Y 5영업일 상승 + 스프레드 5영업일 축소 동시"면 caption에 플래트닝 주의 표기. **2Y 정식판(2s10s 베어플래트닝)은 FRED 키(DGS2) 확보 이후 교체 예정** |
 | spx_band    | sp500                  | 지수 ÷ 21x 밴드 상단 | >1.0 드림장=warn / 이하 밴드 내=good |
 | vix         | vix                    | 최신값 | <15 공포소멸=warn(공포역설) / ≥30 공포=alert / 그 외 neutral |
 | move        | move_index             | 최신값 | <80 정온=good / <110 보통=neutral / ≥110 불안=alert |
@@ -285,7 +286,7 @@ leesunyeop-framework `§7 차트북 연동 스펙`의 논지 체인. index.json 
 
 | id               | type       | source | 키필요 | 설명 |
 |------------------|------------|--------|--------|------|
-| ls_rate_peak     | timeseries | yahoo  | N      | 미10Y(^TNX ÷10 자동감지, %) + WTI(CL=F, yAxis:1 USD) 이중축. markLines: 4.85%(CTA 손절선)·5.5%(구조 경보), axis 0 |
+| ls_rate_peak     | timeseries | yahoo  | N      | 미10Y(^TNX ÷10 자동감지, %) + WTI(CL=F, yAxis:1 USD) 이중축. markLines: 4.85%(CTA 손절선)·5.5%(구조 경보)·4.40%(시나리오 A선)·4.30%(시나리오 B선), 전부 axis 0. 시나리오 A/B 정의는 snapshot `rate_scenario` 카드 행 참조 |
 | ls_semi_vs_power | timeseries | yahoo  | N      | SOX(^SOX) vs 한국 전력기기 바스켓(010120.KS·267260.KS·034020.KS 균등, 각 index100 평균) — 둘 다 index100 상대강도, 3y |
 | ls_memory_cycle  | timeseries | yahoo  | N      | 삼성전자(005930.KS)·SK하이닉스(000660.KS)·마이크론(MU) index100 3선 + MU/한국 메모리 선행 스프레드(MU index100 ÷ 한국 2사 index100 균등평균 ×100, yAxis:1), 2y — C3 마이크론 선행 규칙 |
 | ls_taiwan_hedge  | timeseries | yahoo  | N      | 삼성전자 ÷ TSM 비율 1선 (공통 거래일 inner join), 3y |
