@@ -23,13 +23,16 @@ data/
       "file": "sp500.json",
       "type": "timeseries",       // "timeseries" | "heatmap_perf"
       "section": "주식시장",        // 섹션 그룹핑 라벨 (탭/소제목)
-      "ready": true                // false면 데이터 없음(예: FRED 키 미발급) → 프론트는 placeholder 표시
+      "ready": true,               // false면 데이터 없음(예: FRED 키 미발급) → 프론트는 placeholder 표시
+      "daily": true,               // (선택) true면 "데일리" 뷰 기본 포함 시드. 사용자 ⭐(localStorage)로 오버라이드 가능
+      "dailyOrder": 3              // (선택) 데일리 뷰 표시 순서 (오름차순). 논리체인 순서: C1→C2→C3→C4→C5→기타
     }
   ]
 }
 ```
 
-차트는 index.json의 배열 순서대로 화면에 위→아래 렌더. `ready:false`면 회색 placeholder 카드.
+차트는 index.json의 배열 순서대로 화면에 위→아래 렌더(전체 뷰). `ready:false`면 회색 placeholder 카드.
+데일리 뷰는 `daily:true` 시드 + ⭐ 오버라이드 병합 후 `dailyOrder` 오름차순 정렬(없는 차트는 뒤에 index 순서).
 
 ## type: "timeseries"
 
@@ -268,7 +271,7 @@ leesunyeop-framework `§7 차트북 연동 스펙`의 논지 체인. index.json 
 |------------------|------------|--------|--------|------|
 | ls_rate_peak     | timeseries | yahoo  | N      | 미10Y(^TNX ÷10 자동감지, %) + WTI(CL=F, yAxis:1 USD) 이중축. markLines: 4.85%(CTA 손절선)·5.5%(구조 경보), axis 0 |
 | ls_semi_vs_power | timeseries | yahoo  | N      | SOX(^SOX) vs 한국 전력기기 바스켓(010120.KS·267260.KS·034020.KS 균등, 각 index100 평균) — 둘 다 index100 상대강도, 3y |
-| ls_memory_cycle  | timeseries | yahoo  | N      | 삼성전자(005930.KS)·SK하이닉스(000660.KS)·마이크론(MU) index100 3선, 3y |
+| ls_memory_cycle  | timeseries | yahoo  | N      | 삼성전자(005930.KS)·SK하이닉스(000660.KS)·마이크론(MU) index100 3선 + MU/한국 메모리 선행 스프레드(MU index100 ÷ 한국 2사 index100 균등평균 ×100, yAxis:1), 2y — C3 마이크론 선행 규칙 |
 | ls_taiwan_hedge  | timeseries | yahoo  | N      | 삼성전자 ÷ TSM 비율 1선 (공통 거래일 inner join), 3y |
 | ls_ship_defense  | timeseries | yahoo  | N      | 조선 바스켓(009540.KS·042660.KS 균등 index100) vs KOSPI(^KS11 index100), 3y |
 | move_index       | timeseries | yahoo  | N      | ^MOVE 채권 변동성 지수, 6y |

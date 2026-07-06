@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-06T06:30:02+09:00",
+  "updated": "2026-07-06T10:30:01+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -7,7 +7,8 @@
       "type": "timeseries",
       "section": "주식시장",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 3
     },
     {
       "id": "kospi",
@@ -23,7 +24,8 @@
       "type": "timeseries",
       "section": "리스크",
       "ready": true,
-      "daily": false
+      "daily": true,
+      "dailyOrder": 4
     },
     {
       "id": "sectors",
@@ -63,7 +65,8 @@
       "type": "timeseries",
       "section": "이선엽 체인",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 1
     },
     {
       "id": "ls_semi_vs_power",
@@ -71,7 +74,8 @@
       "type": "timeseries",
       "section": "이선엽 체인",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 6
     },
     {
       "id": "ls_memory_cycle",
@@ -79,7 +83,8 @@
       "type": "timeseries",
       "section": "이선엽 체인",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 5
     },
     {
       "id": "ls_taiwan_hedge",
@@ -87,7 +92,8 @@
       "type": "timeseries",
       "section": "이선엽 체인",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 7
     },
     {
       "id": "ls_ship_defense",
@@ -95,7 +101,8 @@
       "type": "timeseries",
       "section": "이선엽 체인",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 8
     },
     {
       "id": "move_index",
@@ -103,7 +110,8 @@
       "type": "timeseries",
       "section": "이선엽 체인",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 9
     },
     {
       "id": "ust_yields",
@@ -119,7 +127,8 @@
       "type": "timeseries",
       "section": "채권/금리",
       "ready": true,
-      "daily": true
+      "daily": true,
+      "dailyOrder": 2
     },
     {
       "id": "yield_curve",
@@ -175,7 +184,8 @@
       "type": "timeseries",
       "section": "원자재",
       "ready": true,
-      "daily": false
+      "daily": true,
+      "dailyOrder": 10
     },
     {
       "id": "copper",

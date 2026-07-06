@@ -89,28 +89,31 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
     index.json 구조를 생성한다.
     CONTRACT.md 정의 순서: 주식시장 → 밸류에이션 → 섹터 → 리스크 → 한국
     """
-    # 차트 메타 정의 (순서 고정)
-    # daily: True → 사이트 "데일리" 뷰 기본 포함 (아침 검증 세트:
-    # 이선엽 체인 6개 + sp500 밸류밴드 + yield_spread).
+    # 차트 메타 정의 (배열 순서 = 전체 뷰 섹션 렌더 순서, 고정)
+    # daily: True → 사이트 "데일리" 뷰 기본 포함.
+    # daily_order → 데일리 뷰 표시 순서 = 매일 판단하는 논리체인 순서:
+    #   C1 금리 정점(ls_rate_peak, yield_spread) → C2 버블 판별(sp500 밸류밴드, vix)
+    #   → C3 메모리(ls_memory_cycle: MU 선행 포함) → C4 로테이션(ls_semi_vs_power)
+    #   → C5 대만(ls_taiwan_hedge) → 기타(ls_ship_defense, move_index, wti)
     # 사용자가 사이트 ⭐로 localStorage 오버라이드 가능 — 여긴 시드만.
     chart_meta = [
-        {"id": "sp500",        "file": "sp500.json",        "type": "timeseries",   "section": "주식시장", "daily": True},
+        {"id": "sp500",        "file": "sp500.json",        "type": "timeseries",   "section": "주식시장", "daily": True, "daily_order": 3},
         {"id": "kospi",        "file": "kospi.json",        "type": "timeseries",   "section": "한국"},
-        {"id": "vix",          "file": "vix.json",          "type": "timeseries",   "section": "리스크"},
+        {"id": "vix",          "file": "vix.json",          "type": "timeseries",   "section": "리스크", "daily": True, "daily_order": 4},
         {"id": "sectors",      "file": "sectors.json",      "type": "heatmap_perf", "section": "섹터"},
         {"id": "valuation_pe", "file": "valuation_pe.json", "type": "timeseries",   "section": "밸류에이션"},
         {"id": "sp500_eps",    "file": "sp500_eps.json",    "type": "timeseries",   "section": "밸류에이션"},
         {"id": "buffett",      "file": "buffett.json",      "type": "timeseries",   "section": "밸류에이션"},
         # ─── 이선엽 체인 (framework §7 논지 체인, 채권/금리 앞 배치) ─
-        {"id": "ls_rate_peak",     "file": "ls_rate_peak.json",     "type": "timeseries", "section": "이선엽 체인", "daily": True},
-        {"id": "ls_semi_vs_power", "file": "ls_semi_vs_power.json", "type": "timeseries", "section": "이선엽 체인", "daily": True},
-        {"id": "ls_memory_cycle",  "file": "ls_memory_cycle.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True},
-        {"id": "ls_taiwan_hedge",  "file": "ls_taiwan_hedge.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True},
-        {"id": "ls_ship_defense",  "file": "ls_ship_defense.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True},
-        {"id": "move_index",       "file": "move_index.json",       "type": "timeseries", "section": "이선엽 체인", "daily": True},
+        {"id": "ls_rate_peak",     "file": "ls_rate_peak.json",     "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 1},
+        {"id": "ls_semi_vs_power", "file": "ls_semi_vs_power.json", "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 6},
+        {"id": "ls_memory_cycle",  "file": "ls_memory_cycle.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 5},
+        {"id": "ls_taiwan_hedge",  "file": "ls_taiwan_hedge.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 7},
+        {"id": "ls_ship_defense",  "file": "ls_ship_defense.json",  "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 8},
+        {"id": "move_index",       "file": "move_index.json",       "type": "timeseries", "section": "이선엽 체인", "daily": True, "daily_order": 9},
         # ─── 채권/금리 (기존 차트 뒤에 추가) ───────────────────
         {"id": "ust_yields",   "file": "ust_yields.json",   "type": "timeseries",     "section": "채권/금리"},
-        {"id": "yield_spread", "file": "yield_spread.json", "type": "timeseries",     "section": "채권/금리", "daily": True},
+        {"id": "yield_spread", "file": "yield_spread.json", "type": "timeseries",     "section": "채권/금리", "daily": True, "daily_order": 2},
         {"id": "yield_curve",  "file": "yield_curve.json",  "type": "curve_snapshot", "section": "채권/금리"},
         {"id": "credit_proxy", "file": "credit_proxy.json", "type": "timeseries",     "section": "채권/금리"},
         {"id": "credit_hy_oas","file": "credit_hy_oas.json","type": "timeseries",     "section": "채권/금리"},
@@ -119,7 +122,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
         {"id": "dxy",          "file": "dxy.json",          "type": "timeseries",     "section": "환율"},
         # ─── 원자재 ─────────────────────────────────────────────
         {"id": "gold",         "file": "gold.json",         "type": "timeseries",     "section": "원자재"},
-        {"id": "wti",          "file": "wti.json",          "type": "timeseries",     "section": "원자재"},
+        {"id": "wti",          "file": "wti.json",          "type": "timeseries",     "section": "원자재", "daily": True, "daily_order": 10},
         {"id": "copper",       "file": "copper.json",       "type": "timeseries",     "section": "원자재"},
     ]
 
@@ -130,14 +133,17 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
     for meta in chart_meta:
         chart_id = meta["id"]
         ready = ready_map.get(chart_id, False)
-        charts.append({
+        entry = {
             "id": chart_id,
             "file": meta["file"],
             "type": meta["type"],
             "section": meta["section"],
             "ready": ready,
             "daily": bool(meta.get("daily", False)),
-        })
+        }
+        if "daily_order" in meta:
+            entry["dailyOrder"] = meta["daily_order"]  # 데일리 뷰 표시 순서 (CONTRACT 참조)
+        charts.append(entry)
 
     # 파이프라인 소유가 아닌 기존 차트 전부 보존(매 실행 유지).
     # - 링크 카드(LINK_CARDS 기본값 + 사용자가 추가한 link 항목)

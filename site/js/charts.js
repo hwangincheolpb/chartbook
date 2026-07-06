@@ -105,15 +105,25 @@ function isDailyChart(id) {
   return !!dailySeed.get(id);
 }
 
-/* 데일리 표시 순서: 이선엽 체인 섹션 먼저, 나머지는 index 순서
-   (index 순서상 sp500 → yield_spread → 기타 = 밸류 → 스프레드 순 유지) */
+/* 데일리 표시 순서 = 매일 판단하는 논리체인 순서.
+   index.json의 dailyOrder 시드(run.py chart_meta)로 정렬:
+     C1(ls_rate_peak, yield_spread) → C2(sp500, vix) → C3(ls_memory_cycle)
+     → C4(ls_semi_vs_power) → C5(ls_taiwan_hedge) → 기타(ship/move/wti).
+   dailyOrder 없는 차트(사용자 ⭐ 추가분 등)는 그 뒤에 index 순서.
+   구버전 index.json(dailyOrder 없음)은 기존 규칙(체인 섹션 먼저)으로 폴백. */
 function dailyChartIds() {
-  const chain = [], rest = [];
+  const ordered = [], rest = [];
   chartMetas.forEach((m) => {
     if (m.type === 'link' || !isDailyChart(m.id)) return;
-    (m.section === DAILY_FIRST_SECTION ? chain : rest).push(m.id);
+    (typeof m.dailyOrder === 'number' ? ordered : rest).push(m);
   });
-  return chain.concat(rest);
+  if (!ordered.length) {
+    const chain = [], other = [];
+    rest.forEach((m) => (m.section === DAILY_FIRST_SECTION ? chain : other).push(m.id));
+    return chain.concat(other);
+  }
+  ordered.sort((a, b) => a.dailyOrder - b.dailyOrder);
+  return ordered.map((m) => m.id).concat(rest.map((m) => m.id));
 }
 
 /* ---- Lazy render registry — display:none에서 ECharts init하면 width=0.
@@ -242,7 +252,9 @@ function escapeHtml(s) {
 }
 
 /* ---- Utility: note 분해 — 논지(캡션) vs 각주([출처]/[한계]/[주의] 등) ----
-   note 형식: "논지: ... [논리 교정] ... [한계] ... [출처] ..."
+   note 형식: "[C1 금리 정점] 논지 ... → 행동: ... [한계] ... [출처] ..."
+   - note 맨 앞의 체인 태그([C숫자.../P숫자...] — framework §2 체인 ID)는
+     각주 마커가 아니라 논지의 일부로 유지
    - 대괄호 마커 앞의 리드 텍스트 = 논지 캡션 (차트 아래 콜아웃)
    - [라벨] 이후 각 구간 = 각주 라인 (작게, footnote)
    - 마커가 없으면 note 전체를 논지 캡션으로 취급 */
@@ -252,12 +264,19 @@ function splitNote(note) {
     const m = s.match(/^\s*논지\s*[::]\s*([\s\S]*)$/);
     return m ? m[1].trim() : s.trim();
   };
+  // 선두 체인 태그 분리 (예: "[C1 금리 정점]", "[C8 조선·방산]")
+  let chainTag = '';
+  const tagMatch = note.match(/^\s*\[([CP]\d[^\]\n]{0,18})\]\s*/);
+  if (tagMatch) {
+    chainTag = `[${tagMatch[1]}] `;
+    note = note.slice(tagMatch[0].length);
+  }
   const markerRe = /\[([^\]\n]{1,20})\]\s*/g;
   const markers = [...note.matchAll(markerRe)];
   if (!markers.length) {
-    return { thesis: stripThesisLabel(note), footnotes: [] };
+    return { thesis: chainTag + stripThesisLabel(note), footnotes: [] };
   }
-  const thesis = stripThesisLabel(note.slice(0, markers[0].index));
+  const thesis = chainTag + stripThesisLabel(note.slice(0, markers[0].index));
   const footnotes = markers.map((m, i) => {
     const start = m.index + m[0].length;
     const end = i + 1 < markers.length ? markers[i + 1].index : note.length;
