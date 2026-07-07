@@ -187,6 +187,24 @@ fetch_yahoo.py(②③) / fetch_fred.py(④⑤).
   기존 FRED 차트(credit_hy_oas)의 "키 없으면 ready:false" 규칙은 그대로 유지.
 - 판정 배지는 데이터 파일이 아니라 `bubble_checklist.json`에서 온다 (위 절 참조).
 
+## ksh_* 파생 데이터 (김성환 대시보드 전용 피드) — 규격 확장(파괴 아님)
+
+김성환 프레임워크 대시보드(`~/workspace/dev/kimsunghwan-framework/build_dashboard.py`)가
+읽는 파생 데이터 2종. **chartbook 프론트 렌더 대상이 아니며 index.json에 등록하지 않는다**
+(수직 기준선·음영 등 프론트 미지원 요소 필요). 수집은 `pipeline/fetch_ksh.py`,
+run.py yahoo_fetchers 루프에 등록되어 매일 자동 갱신. `"kind": "ksh_derived"`로 표식.
+^IXIC 다운로드는 3회(1995-2001 / 2016-2022 / 2020-현재)로 묶고 모듈 캐시 공유(서버 예의).
+
+| 파일 | 내용 |
+|------|------|
+| `ksh_ai_dotcom.json` | 사이클 궤적 오버레이 4선(2026 PB교육 p3 구성) — AI(나스닥 2023.1~현재)·닷컴(나스닥 1995.1~2001.6)·클라우드/FANG(나스닥 2016.7~2021.12)·광란의 20년대(다우 1924.7~1932.6), 각 시작=100 리베이스, `data`=[[시작 후 개월수(float), 값], ...] 주간. `meta.bubble_ref_window_months`=[54, 62.4] (닷컴 T+4.5~5.2Y "본격 버블 국면(2027)" 음영 참조 구간). 시리즈별 `start`/`end`/`last{months,value,date}`. 광란의 20년대는 DJIA 소스 실패 시 시리즈만 생략(방어적) |
+| `ksh_ratecut_traj.json` | 시리즈별 T=국면 마지막 금리인하일에 100 리베이스, `data`=[[T 후 개월수(0~30), 값], ...] 주간. 케이스 4개(버블템플릿 p45): ①T=1927-08-05(대공황, 다우 — 뉴욕연은 재할인율 인하. DJIA 소스 실패 시 생략) ②T=1998-10-15(닷컴) ③T=2020-03-16(팬데믹) ④현재 사이클(`provisional:true`, T=FRED DFEDTARU 하향일 자동 탐지·폴백 FEDFUNDS 월평균 — 인하 사이클 진행 중이라 잠정값, `meta.current_T`/`current_T_source`). `meta.avg_peak_months`=21 (과거 케이스 평균 정점 수직 기준선), 시리즈별 `peak`/`last` |
+
+DJIA 역사(1920~30년대) 소스: 1순위 stooq CSV(`stooq.com/q/d/l/?s=^dji&i=d`, 일별 1896~ — JS 안티봇 챌린지 시 실패, 2026-07 확인됨) → 폴백 FRED NBER 매크로히스토리 `M1109BUSM293NNBR`(다우 월평균 1914-1968, 키리스) → 둘 다 실패 시 해당 시리즈/케이스만 생략. 실제 사용 소스는 `meta.djia_source`에 기록.
+
+공통 필드: `id`, `kind:"ksh_derived"`, `title`, `subtitle`, `source`, `x_unit`, `updated`(KST ISO8601), `meta`, `series[]`.
+스키마 변경 시 build_dashboard.py와 함께 맞출 것 (chartbook 프론트와는 무관).
+
 ## calendar.json (이번 주 일정+실적 카드) — 규격 확장(파괴 아님)
 
 아침 검증 ⑥ "오늘/이번 주 촉매" 카드. 파이프라인(`run.py build_calendar()` → `pipeline/fetch_calendar.py`)이

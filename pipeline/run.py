@@ -846,6 +846,7 @@ def run() -> None:
         )
         from fetch_multpl import fetch_all_multpl
         from fetch_finra import fetch_margin_debt
+        from fetch_ksh import fetch_ksh_ai_dotcom, fetch_ksh_ratecut_traj
     except ImportError:
         # run.py가 다른 디렉토리에서 실행될 때를 대비
         sys.path.insert(0, str(PIPELINE_DIR))
@@ -865,6 +866,7 @@ def run() -> None:
         )
         from fetch_multpl import fetch_all_multpl
         from fetch_finra import fetch_margin_debt
+        from fetch_ksh import fetch_ksh_ai_dotcom, fetch_ksh_ratecut_traj
 
     # ─── multpl.com 먼저 수집 (sp500 밸류밴드 재료 = EPS TTM) ───
     # sp500 승격판이 EPS×15/18/21 밴드를 그리므로 yahoo 루프보다 앞서 실행.
@@ -909,6 +911,10 @@ def run() -> None:
         ("ipo_rs",            fetch_ipo_rs),
         ("arkk_rs",           fetch_arkk_rs),
         ("margin_debt",       fetch_margin_debt),
+        # 김성환 대시보드 전용 파생 데이터 (index.json 미등록 — CONTRACT "ksh_*" 절)
+        # ^IXIC 2회 다운로드를 두 fetcher가 모듈 캐시로 공유 → 순서 유지할 것
+        ("ksh_ai_dotcom",     fetch_ksh_ai_dotcom),
+        ("ksh_ratecut_traj",  fetch_ksh_ratecut_traj),
     ]
 
     for chart_id, fetcher in yahoo_fetchers:
