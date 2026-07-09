@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-09T06:30:05+09:00",
+  "updated": "2026-07-10T06:30:05+09:00",
   "events": [
     {
       "date": "2026-07-14",
@@ -21,6 +21,13 @@
       "importance": "high"
     },
     {
+      "date": "2026-07-22",
+      "type": "실적",
+      "label": "알파벳 실적",
+      "ticker": "GOOGL",
+      "importance": "mid"
+    },
+    {
       "date": "2026-07-23",
       "type": "실적",
       "label": "HD현대일렉트릭 실적",
@@ -32,13 +39,6 @@
       "type": "실적",
       "label": "LS일렉트릭 실적",
       "ticker": "010120.KS",
-      "importance": "mid"
-    },
-    {
-      "date": "2026-07-23",
-      "type": "실적",
-      "label": "알파벳 실적",
-      "ticker": "GOOGL",
       "importance": "mid"
     }
   ]
