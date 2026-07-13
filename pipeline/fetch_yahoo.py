@@ -155,6 +155,57 @@ def fetch_sp500(lookback_years: int = 6, eps_pairs: list[list] | None = None) ->
     }
 
 
+def fetch_nasdaq_deviation(lookback_years: int = 6) -> dict[str, Any]:
+    """
+    나스닥종합(^IXIC) 200일선 이격도 — (지수 ÷ 200D MA − 1) × 100 (%).
+
+    김성환 프레임워크 ① 대전제 "EPS=추세 / 이평선=현실 / 이격도=꿈의 크기"의
+    유일한 직접 공백을 메우는 차트(charts-mapping.md 후보 N2). 지수 레벨이 아니라
+    현실(200일선)에서 얼마나 떠 있는가 = '꿈'의 크기를 단일 라인으로 본다.
+    소스는 ^IXIC 하나 — fetch_sp500과 동일한 200D MA 계산 패턴 재사용.
+    """
+    end = datetime.today()
+    start = end - timedelta(days=lookback_years * 365 + 210)  # 200D MA 웜업 여유분
+
+    logger.info("나스닥 200일 이격도 데이터 수집 중...")
+    close_df = _download(["^IXIC"], start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"))
+
+    ixic = close_df["^IXIC"] if "^IXIC" in close_df.columns else close_df.iloc[:, 0]
+    ixic = ixic.dropna()
+
+    ma200 = ixic.rolling(window=200, min_periods=200).mean()
+    deviation = (ixic / ma200 - 1.0) * 100.0
+    deviation = deviation.dropna()
+
+    cutoff = (end - timedelta(days=lookback_years * 365)).strftime("%Y-%m-%d")
+    dev_trimmed = deviation[deviation.index >= cutoff]
+    logger.info(f"  나스닥 이격도: {len(dev_trimmed)}개 데이터 포인트")
+
+    return {
+        "id": "nasdaq_deviation",
+        "type": "timeseries",
+        "title": "나스닥 200일 이격도",
+        "subtitle": "나스닥종합 ÷ 200일 이동평균 − 1 (%)",
+        "source": "Yahoo Finance (^IXIC)",
+        "unit": "%",
+        "updated": _now_kst(),
+        "note": (
+            "[① 대전제 · 이격도=꿈의 크기] EPS=추세, 이평선(200일)=현실, 지수가 그 위로 "
+            "떠 있는 폭이 '꿈'의 크기다. 지수 신고가 자체가 아니라 현실선에서의 이탈 폭이 "
+            "과열 척도 — 이격이 벌어질수록 되돌림 여력도 커진다. 0선 = 200일선, 음(−)이면 "
+            "지수가 추세 아래(냉각·조정). "
+            "→ 행동: 이격 확대 국면에선 신규 추격 자제·분할 익절 준비, 0선 회귀·이탈은 "
+            "추세 훼손 점검 트리거. "
+            "[출처] 김성환 프레임워크 ① 대전제(이격도=꿈) — charts-mapping N2. "
+            "[한계] 기준선(+10/+20% 등)은 chartbook 운영 기준이며 김성환 원 수치 아님. "
+            "이격도는 절대 임계값보다 '방향·가속'과 심리 지표(VIX) 병행 판독이 원칙."
+        ),
+        "series": [
+            {"name": "나스닥 200일 이격도 (%)", "data": _series_to_pairs(dev_trimmed)},
+        ],
+    }
+
+
 def fetch_kospi(lookback_years: int = 6) -> dict[str, Any]:
     """
     KOSPI (^KS11) + KOSDAQ (^KQ11) 일별 종가 수집.

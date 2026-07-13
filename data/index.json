@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-13T06:30:04+09:00",
+  "updated": "2026-07-14T06:30:04+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -9,6 +9,14 @@
       "ready": true,
       "daily": true,
       "dailyOrder": 3
+    },
+    {
+      "id": "nasdaq_deviation",
+      "file": "nasdaq_deviation.json",
+      "type": "timeseries",
+      "section": "밸류에이션",
+      "ready": true,
+      "daily": false
     },
     {
       "id": "kospi",

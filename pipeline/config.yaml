@@ -20,6 +20,21 @@ charts:
     ma200_name: "200D MA"
     lookback_years: 6
 
+  # 나스닥 200일선 이격도 = (지수 ÷ 200D MA − 1) × 100 (%). 원시 티커가 아닌
+  # 계산값이라 fetch_yahoo.fetch_nasdaq_deviation()가 담당(run.py 하드코딩 fetcher).
+  # 김성환 ① 대전제 "이격도=꿈" 매핑(charts-mapping N2).
+  - id: nasdaq_deviation
+    section: "밸류에이션"
+    type: timeseries
+    source: yahoo
+    title: "나스닥 200일 이격도"
+    subtitle: "나스닥종합 ÷ 200일 이동평균 − 1 (%)"
+    unit: "%"
+    tickers:
+      - "^IXIC"
+    computed: "deviation_from_ma200"   # 문서용 — 실제 계산은 fetch_nasdaq_deviation()
+    lookback_years: 6
+
   - id: kospi
     section: "한국"
     type: timeseries

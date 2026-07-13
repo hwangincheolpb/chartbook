@@ -129,6 +129,7 @@ def build_index(chart_results: list[dict[str, Any]], now: str) -> dict[str, Any]
     # 사용자가 사이트 ⭐로 localStorage 오버라이드 가능 — 여긴 시드만.
     chart_meta = [
         {"id": "sp500",        "file": "sp500.json",        "type": "timeseries",   "section": "주식시장", "daily": True, "daily_order": 3},
+        {"id": "nasdaq_deviation", "file": "nasdaq_deviation.json", "type": "timeseries", "section": "밸류에이션"},
         {"id": "kospi",        "file": "kospi.json",        "type": "timeseries",   "section": "한국"},
         # ─── 수급 (로테이션 끝 판정 재료 — 스냅샷 '로테이션 신호' 카드 연동) ─
         # vkospi는 무키 소스 없음(KRX 로그인 필수화, Naver/Daum/Yahoo 미제공) → 미구현 (fetch_kr_flow.py 주석 참조)
@@ -831,7 +832,7 @@ def run() -> None:
     # ─── Yahoo Finance 차트 수집 ─────────────────────────────────
     try:
         from fetch_yahoo import (
-            fetch_sp500, fetch_kospi, fetch_vix, fetch_sectors,
+            fetch_sp500, fetch_nasdaq_deviation, fetch_kospi, fetch_vix, fetch_sectors,
             fetch_ust_yields, fetch_yield_spread, fetch_yield_curve,
             fetch_credit_proxy,
             fetch_usdkrw, fetch_dxy, fetch_gold, fetch_wti, fetch_copper,
@@ -851,7 +852,7 @@ def run() -> None:
         # run.py가 다른 디렉토리에서 실행될 때를 대비
         sys.path.insert(0, str(PIPELINE_DIR))
         from fetch_yahoo import (
-            fetch_sp500, fetch_kospi, fetch_vix, fetch_sectors,
+            fetch_sp500, fetch_nasdaq_deviation, fetch_kospi, fetch_vix, fetch_sectors,
             fetch_ust_yields, fetch_yield_spread, fetch_yield_curve,
             fetch_credit_proxy,
             fetch_usdkrw, fetch_dxy, fetch_gold, fetch_wti, fetch_copper,
@@ -880,7 +881,8 @@ def run() -> None:
             eps_pairs = eps_series[0].get("data")
 
     yahoo_fetchers = [
-        ("sp500",         lambda: fetch_sp500(eps_pairs=eps_pairs)),
+        ("sp500",             lambda: fetch_sp500(eps_pairs=eps_pairs)),
+        ("nasdaq_deviation",  fetch_nasdaq_deviation),
         ("kospi",         fetch_kospi),
         ("vix",           fetch_vix),
         ("sectors",       fetch_sectors),
