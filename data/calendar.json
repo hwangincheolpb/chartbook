@@ -1,12 +1,6 @@
 {
-  "updated": "2026-07-14T06:30:04+09:00",
+  "updated": "2026-07-15T06:30:05+09:00",
   "events": [
-    {
-      "date": "2026-07-14",
-      "type": "지표",
-      "label": "미 CPI (6월분)",
-      "importance": "high"
-    },
     {
       "date": "2026-07-16",
       "type": "회의",
@@ -46,6 +40,40 @@
       "type": "실적",
       "label": "한화오션 실적",
       "ticker": "042660.KS",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-07-29",
+      "type": "회의",
+      "label": "FOMC 금리결정",
+      "importance": "high"
+    },
+    {
+      "date": "2026-07-29",
+      "type": "실적",
+      "label": "SK하이닉스 실적",
+      "ticker": "000660.KS",
+      "importance": "high"
+    },
+    {
+      "date": "2026-07-29",
+      "type": "실적",
+      "label": "삼성전자 실적",
+      "ticker": "005930.KS",
+      "importance": "high"
+    },
+    {
+      "date": "2026-07-29",
+      "type": "실적",
+      "label": "마이크로소프트 실적",
+      "ticker": "MSFT",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-07-29",
+      "type": "실적",
+      "label": "메타 실적",
+      "ticker": "META",
       "importance": "mid"
     }
   ]
