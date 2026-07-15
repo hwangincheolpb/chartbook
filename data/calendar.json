@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-15T06:30:05+09:00",
+  "updated": "2026-07-16T06:30:04+09:00",
   "events": [
     {
       "date": "2026-07-16",
@@ -74,6 +74,32 @@
       "type": "실적",
       "label": "메타 실적",
       "ticker": "META",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-07-30",
+      "type": "지표",
+      "label": "미 GDP 2Q 속보치",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-07-30",
+      "type": "지표",
+      "label": "미 PCE 물가 (6월분)",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-07-30",
+      "type": "실적",
+      "label": "HD한국조선해양 실적",
+      "ticker": "009540.KS",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-07-30",
+      "type": "실적",
+      "label": "아마존 실적",
+      "ticker": "AMZN",
       "importance": "mid"
     }
   ]
