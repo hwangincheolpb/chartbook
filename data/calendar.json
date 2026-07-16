@@ -1,19 +1,6 @@
 {
-  "updated": "2026-07-16T06:30:04+09:00",
+  "updated": "2026-07-17T06:30:01+09:00",
   "events": [
-    {
-      "date": "2026-07-16",
-      "type": "회의",
-      "label": "한은 금통위 (기준금리)",
-      "importance": "high"
-    },
-    {
-      "date": "2026-07-16",
-      "type": "실적",
-      "label": "TSMC 실적",
-      "ticker": "TSM",
-      "importance": "high"
-    },
     {
       "date": "2026-07-22",
       "type": "실적",
