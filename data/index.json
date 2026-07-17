@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-17T06:30:01+09:00",
+  "updated": "2026-07-18T06:30:04+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -97,7 +97,7 @@
       "file": "ipo_rs.json",
       "type": "timeseries",
       "section": "버블 체크리스트",
-      "ready": true,
+      "ready": false,
       "daily": false
     },
     {
