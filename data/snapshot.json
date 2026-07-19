@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-19T06:30:01+09:00",
+  "updated": "2026-07-20T06:30:04+09:00",
   "cards": [
     {
       "id": "us10y",
@@ -48,9 +48,9 @@
     {
       "id": "move",
       "label": "MOVE",
-      "value": 69.5,
+      "value": 70.9,
       "unit": "",
-      "d1": 0.96,
+      "d1": 3.99,
       "state": "good",
       "badge": "정온",
       "caption": "낮음 = 채권시장 정온 (금리 변동성)",
@@ -70,9 +70,9 @@
     {
       "id": "usdkrw",
       "label": "USD/KRW",
-      "value": 1487.5,
+      "value": 1485.7,
       "unit": "원",
-      "d1": 0.08,
+      "d1": 0.47,
       "state": "neutral",
       "badge": "",
       "caption": "원/달러 환율",
@@ -81,12 +81,12 @@
     {
       "id": "copper_gold",
       "label": "구리/금 비율",
-      "value": 1.55,
+      "value": 1.559,
       "unit": "",
-      "d1": -1.87,
+      "d1": -1.32,
       "state": "neutral",
       "badge": "↑",
-      "caption": "3개월 ↑ +23.4% — 상승=성장·금리 상방 (건들락)",
+      "caption": "3개월 ↑ +24.1% — 상승=성장·금리 상방 (건들락)",
       "link": "#card-copper"
     },
     {
