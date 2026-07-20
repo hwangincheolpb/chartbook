@@ -5,7 +5,7 @@
   "subtitle": "T=국면 마지막 인하일=100 리베이스 · x=T 후 개월수(0~30) · 주간",
   "source": "Yahoo Finance (^IXIC) + FRED NBER (DJIA 월평균, M1109BUSM293NNBR) + FRED (DFEDTARU/FEDFUNDS, 키리스)",
   "x_unit": "개월 (마지막 인하 후)",
-  "updated": "2026-07-20T06:30:44+09:00",
+  "updated": "2026-07-21T06:30:44+09:00",
   "meta": {
     "avg_peak_months": 21,
     "avg_peak_label": "평균 정점 21M",
@@ -1241,8 +1241,8 @@
         "value": 114.32
       },
       "last": {
-        "months": 7.16,
-        "value": 108.16
+        "months": 7.39,
+        "value": 108.11
       },
       "data": [
         [
@@ -1376,6 +1376,10 @@
         [
           7.16,
           108.16
+        ],
+        [
+          7.39,
+          108.11
         ]
       ]
     }

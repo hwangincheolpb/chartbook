@@ -1,26 +1,26 @@
 {
-  "updated": "2026-07-20T06:30:04+09:00",
+  "updated": "2026-07-21T06:30:04+09:00",
   "cards": [
     {
       "id": "us10y",
       "label": "미국채 10Y",
-      "value": 4.541,
+      "value": 4.598,
       "unit": "%",
-      "d1": -0.61,
+      "d1": 1.26,
       "state": "good",
       "badge": "여유",
-      "caption": "CTA 손절선 4.85%까지 +0.31%p",
+      "caption": "CTA 손절선 4.85%까지 +0.25%p",
       "link": "#card-ls_rate_peak"
     },
     {
       "id": "rate_scenario",
       "label": "금리 시나리오 A/B",
-      "value": 4.541,
+      "value": 4.598,
       "unit": "%",
-      "d1": -0.61,
+      "d1": 1.26,
       "state": "alert",
       "badge": "A 매파 재프라이싱",
-      "caption": "4.40 상향 안착(종가 3영업일 연속) · A선 4.40까지 -14bp·B선 4.30까지 -24bp → A 확정 시 분할 진입·전제 깨지면 기계적 손절, B 확정 시 되돌림 포지션 유지",
+      "caption": "4.40 상향 안착(종가 3영업일 연속) · A선 4.40까지 -20bp·B선 4.30까지 -30bp → A 확정 시 분할 진입·전제 깨지면 기계적 손절, B 확정 시 되돌림 포지션 유지",
       "link": "#card-ls_rate_peak"
     },
     {
@@ -28,18 +28,18 @@
       "label": "S&P500 / 21x 밴드",
       "value": 1.47,
       "unit": "x",
-      "d1": -1.01,
+      "d1": -0.19,
       "state": "warn",
       "badge": "드림장",
-      "caption": "지수 7,458 = 21x 밴드 상단(5,072)의 1.47배 — 1.0 초과=드림장",
+      "caption": "지수 7,443 = 21x 밴드 상단(5,072)의 1.47배 — 1.0 초과=드림장",
       "link": "#card-sp500"
     },
     {
       "id": "vix",
       "label": "VIX",
-      "value": 18.77,
+      "value": 18.65,
       "unit": "",
-      "d1": 12.19,
+      "d1": -0.64,
       "state": "neutral",
       "badge": "보통",
       "caption": "15~30 정상 범위 (15 미만이 공포역설 경계)",
@@ -48,9 +48,9 @@
     {
       "id": "move",
       "label": "MOVE",
-      "value": 70.9,
+      "value": 72.7,
       "unit": "",
-      "d1": 3.99,
+      "d1": 2.51,
       "state": "good",
       "badge": "정온",
       "caption": "낮음 = 채권시장 정온 (금리 변동성)",
@@ -59,9 +59,9 @@
     {
       "id": "dxy",
       "label": "달러 인덱스",
-      "value": 100.75,
+      "value": 100.97,
       "unit": "",
-      "d1": 0.02,
+      "d1": 0.22,
       "state": "neutral",
       "badge": "",
       "caption": "DXY — 달러 강세=신흥국·원자재 역풍",
@@ -70,9 +70,9 @@
     {
       "id": "usdkrw",
       "label": "USD/KRW",
-      "value": 1485.7,
+      "value": 1475.7,
       "unit": "원",
-      "d1": 0.47,
+      "d1": -0.21,
       "state": "neutral",
       "badge": "",
       "caption": "원/달러 환율",
@@ -81,23 +81,23 @@
     {
       "id": "copper_gold",
       "label": "구리/금 비율",
-      "value": 1.559,
+      "value": 1.581,
       "unit": "",
-      "d1": -1.32,
+      "d1": 1.96,
       "state": "neutral",
       "badge": "↑",
-      "caption": "3개월 ↑ +24.1% — 상승=성장·금리 상방 (건들락)",
+      "caption": "3개월 ↑ +23.7% — 상승=성장·금리 상방 (건들락)",
       "link": "#card-copper"
     },
     {
       "id": "credit",
       "label": "크레딧 HYG/LQD",
-      "value": 0.7405,
+      "value": 0.7436,
       "unit": "",
-      "d1": -0.24,
+      "d1": 0.42,
       "state": "good",
       "badge": "정온",
-      "caption": "3개월 ↑ +1.4% — 하락=크레딧 스트레스",
+      "caption": "3개월 ↑ +1.8% — 하락=크레딧 스트레스",
       "link": "#card-credit_proxy"
     },
     {
@@ -114,12 +114,12 @@
     {
       "id": "kr_fear_greed",
       "label": "공포·탐욕",
-      "value": 13.9,
+      "value": 15.0,
       "unit": "pt",
-      "d1": -20.57,
+      "d1": 7.91,
       "state": "warn",
       "badge": "극공포",
-      "caption": "극공포(14) — 수급 가중 KOSPI 심리(외인35%·기관20%) · 극공포<25/극탐욕>75 · 매수 후보 점검 · VIX(미국 심리)와 상보",
+      "caption": "극공포(15) — 수급 가중 KOSPI 심리(외인35%·기관20%) · 극공포<25/극탐욕>75 · 매수 후보 점검 · VIX(미국 심리)와 상보",
       "link": "#card-kr_fear_greed"
     },
     {
