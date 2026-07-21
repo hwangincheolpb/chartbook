@@ -1,18 +1,11 @@
 {
-  "updated": "2026-07-21T06:30:04+09:00",
+  "updated": "2026-07-22T06:30:04+09:00",
   "events": [
     {
       "date": "2026-07-22",
       "type": "실적",
       "label": "알파벳 실적",
       "ticker": "GOOGL",
-      "importance": "mid"
-    },
-    {
-      "date": "2026-07-23",
-      "type": "실적",
-      "label": "HD현대일렉트릭 실적",
-      "ticker": "267260.KS",
       "importance": "mid"
     },
     {
@@ -35,6 +28,13 @@
       "label": "SK하이닉스 실적",
       "ticker": "000660.KS",
       "importance": "high"
+    },
+    {
+      "date": "2026-07-28",
+      "type": "실적",
+      "label": "HD현대일렉트릭 실적",
+      "ticker": "267260.KS",
+      "importance": "mid"
     },
     {
       "date": "2026-07-29",
