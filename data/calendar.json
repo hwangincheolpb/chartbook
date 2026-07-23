@@ -1,20 +1,6 @@
 {
-  "updated": "2026-07-23T06:30:00+09:00",
+  "updated": "2026-07-24T06:30:04+09:00",
   "events": [
-    {
-      "date": "2026-07-23",
-      "type": "실적",
-      "label": "LS일렉트릭 실적",
-      "ticker": "010120.KS",
-      "importance": "mid"
-    },
-    {
-      "date": "2026-07-23",
-      "type": "실적",
-      "label": "알파벳 실적",
-      "ticker": "GOOGL",
-      "importance": "mid"
-    },
     {
       "date": "2026-07-27",
       "type": "실적",
@@ -88,6 +74,12 @@
       "label": "아마존 실적",
       "ticker": "AMZN",
       "importance": "mid"
+    },
+    {
+      "date": "2026-08-07",
+      "type": "지표",
+      "label": "미 고용보고서 NFP (7월분)",
+      "importance": "high"
     }
   ]
 }
