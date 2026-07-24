@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-24T06:30:04+09:00",
+  "updated": "2026-07-25T06:30:00+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -138,7 +138,7 @@
       "file": "ls_semi_vs_power.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": true,
+      "ready": false,
       "daily": true,
       "dailyOrder": 6
     },
