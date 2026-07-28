@@ -1,20 +1,6 @@
 {
-  "updated": "2026-07-28T06:30:04+09:00",
+  "updated": "2026-07-29T06:30:05+09:00",
   "events": [
-    {
-      "date": "2026-07-28",
-      "type": "실적",
-      "label": "SK하이닉스 실적",
-      "ticker": "000660.KS",
-      "importance": "high"
-    },
-    {
-      "date": "2026-07-28",
-      "type": "실적",
-      "label": "HD현대일렉트릭 실적",
-      "ticker": "267260.KS",
-      "importance": "mid"
-    },
     {
       "date": "2026-07-29",
       "type": "회의",
@@ -72,6 +58,12 @@
       "date": "2026-08-07",
       "type": "지표",
       "label": "미 고용보고서 NFP (7월분)",
+      "importance": "high"
+    },
+    {
+      "date": "2026-08-12",
+      "type": "지표",
+      "label": "미 CPI (7월분)",
       "importance": "high"
     }
   ]
