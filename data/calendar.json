@@ -1,33 +1,6 @@
 {
-  "updated": "2026-07-29T06:30:05+09:00",
+  "updated": "2026-07-30T06:30:05+09:00",
   "events": [
-    {
-      "date": "2026-07-29",
-      "type": "회의",
-      "label": "FOMC 금리결정",
-      "importance": "high"
-    },
-    {
-      "date": "2026-07-29",
-      "type": "실적",
-      "label": "삼성전자 실적",
-      "ticker": "005930.KS",
-      "importance": "high"
-    },
-    {
-      "date": "2026-07-29",
-      "type": "실적",
-      "label": "마이크로소프트 실적",
-      "ticker": "MSFT",
-      "importance": "mid"
-    },
-    {
-      "date": "2026-07-29",
-      "type": "실적",
-      "label": "메타 실적",
-      "ticker": "META",
-      "importance": "mid"
-    },
     {
       "date": "2026-07-30",
       "type": "지표",
@@ -43,8 +16,15 @@
     {
       "date": "2026-07-30",
       "type": "실적",
-      "label": "HD한국조선해양 실적",
-      "ticker": "009540.KS",
+      "label": "마이크로소프트 실적",
+      "ticker": "MSFT",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-07-30",
+      "type": "실적",
+      "label": "메타 실적",
+      "ticker": "META",
       "importance": "mid"
     },
     {
