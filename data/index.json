@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-07T06:30:02+09:00",
+  "updated": "2026-08-08T06:30:01+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -156,7 +156,7 @@
       "file": "ls_taiwan_hedge.json",
       "type": "timeseries",
       "section": "이선엽 체인",
-      "ready": false,
+      "ready": true,
       "daily": true,
       "dailyOrder": 7
     },
