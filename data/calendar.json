@@ -1,11 +1,30 @@
 {
-  "updated": "2026-08-11T06:30:00+09:00",
+  "updated": "2026-08-12T06:30:00+09:00",
   "events": [
     {
       "date": "2026-08-12",
       "type": "지표",
       "label": "미 CPI (7월분)",
       "importance": "high"
+    },
+    {
+      "date": "2026-08-26",
+      "type": "실적",
+      "label": "엔비디아 실적",
+      "ticker": "NVDA",
+      "importance": "high"
+    },
+    {
+      "date": "2026-08-26",
+      "type": "지표",
+      "label": "미 GDP 2Q 잠정치",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-08-26",
+      "type": "지표",
+      "label": "미 PCE 물가 (7월분)",
+      "importance": "mid"
     }
   ]
 }
