@@ -1,12 +1,6 @@
 {
-  "updated": "2026-08-12T06:30:00+09:00",
+  "updated": "2026-08-13T06:30:00+09:00",
   "events": [
-    {
-      "date": "2026-08-12",
-      "type": "지표",
-      "label": "미 CPI (7월분)",
-      "importance": "high"
-    },
     {
       "date": "2026-08-26",
       "type": "실적",
@@ -25,6 +19,12 @@
       "type": "지표",
       "label": "미 PCE 물가 (7월분)",
       "importance": "mid"
+    },
+    {
+      "date": "2026-08-27",
+      "type": "회의",
+      "label": "한은 금통위 (기준금리)",
+      "importance": "high"
     }
   ]
 }
