@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-15T06:30:02+09:00",
+  "updated": "2026-08-16T06:30:01+09:00",
   "cards": [
     {
       "id": "us10y",
@@ -48,9 +48,9 @@
     {
       "id": "move",
       "label": "MOVE",
-      "value": 69.6,
+      "value": 70.9,
       "unit": "",
-      "d1": -1.83,
+      "d1": 3.99,
       "state": "good",
       "badge": "정온",
       "caption": "낮음 = 채권시장 정온 (금리 변동성)",
@@ -59,9 +59,9 @@
     {
       "id": "dxy",
       "label": "달러 인덱스",
-      "value": 99.64,
+      "value": 99.67,
       "unit": "",
-      "d1": -0.32,
+      "d1": -0.29,
       "state": "neutral",
       "badge": "",
       "caption": "DXY — 달러 강세=신흥국·원자재 역풍",
@@ -70,9 +70,9 @@
     {
       "id": "usdkrw",
       "label": "USD/KRW",
-      "value": 1416.5,
+      "value": 1412.0,
       "unit": "원",
-      "d1": 0.0,
+      "d1": -0.34,
       "state": "neutral",
       "badge": "",
       "caption": "원/달러 환율",
@@ -81,12 +81,12 @@
     {
       "id": "copper_gold",
       "label": "구리/금 비율",
-      "value": 1.491,
+      "value": 1.507,
       "unit": "",
-      "d1": -1.34,
+      "d1": -0.28,
       "state": "neutral",
       "badge": "↑",
-      "caption": "3개월 ↑ +8.6% — 상승=성장·금리 상방 (건들락)",
+      "caption": "3개월 ↑ +9.8% — 상승=성장·금리 상방 (건들락)",
       "link": "#card-copper"
     },
     {
@@ -114,9 +114,9 @@
     {
       "id": "kr_fear_greed",
       "label": "공포·탐욕",
-      "value": 35.0,
+      "value": 35.4,
       "unit": "pt",
-      "d1": 32.58,
+      "d1": 34.6,
       "state": "good",
       "badge": "공포",
       "caption": "공포(35) — 수급 가중 KOSPI 심리(외인35%·기관20%) · 극공포<25/극탐욕>75 · 불안 생존=버블 아님 · VIX(미국 심리)와 상보",
