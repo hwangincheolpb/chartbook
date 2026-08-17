@@ -5,7 +5,7 @@
   "subtitle": "Crude Oil Futures (CL=F)",
   "source": "Yahoo Finance",
   "unit": "USD",
-  "updated": "2026-08-17T06:30:13+09:00",
+  "updated": "2026-08-18T06:30:15+09:00",
   "series": [
     {
       "name": "WTI 원유",
@@ -6061,6 +6061,10 @@
         [
           "2026-08-14",
           82.4
+        ],
+        [
+          "2026-08-17",
+          84.95
         ]
       ]
     }
