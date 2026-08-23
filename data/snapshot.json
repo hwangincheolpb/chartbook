@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-23T06:30:02+09:00",
+  "updated": "2026-08-24T06:30:05+09:00",
   "cards": [
     {
       "id": "us10y",
@@ -70,9 +70,9 @@
     {
       "id": "usdkrw",
       "label": "USD/KRW",
-      "value": 1383.9,
+      "value": 1385.9,
       "unit": "원",
-      "d1": -0.5,
+      "d1": -0.35,
       "state": "neutral",
       "badge": "",
       "caption": "원/달러 환율",
@@ -81,12 +81,12 @@
     {
       "id": "copper_gold",
       "label": "구리/금 비율",
-      "value": 1.423,
+      "value": 1.407,
       "unit": "",
-      "d1": -0.52,
+      "d1": -1.61,
       "state": "neutral",
-      "badge": "↑",
-      "caption": "3개월 ↑ +1.4% — 상승=성장·금리 상방 (건들락)",
+      "badge": "→",
+      "caption": "3개월 → +0.3% — 상승=성장·금리 상방 (건들락)",
       "link": "#card-copper"
     },
     {
