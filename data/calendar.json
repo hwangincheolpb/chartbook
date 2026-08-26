@@ -1,25 +1,6 @@
 {
-  "updated": "2026-08-26T06:30:00+09:00",
+  "updated": "2026-08-27T06:30:00+09:00",
   "events": [
-    {
-      "date": "2026-08-26",
-      "type": "실적",
-      "label": "엔비디아 실적",
-      "ticker": "NVDA",
-      "importance": "high"
-    },
-    {
-      "date": "2026-08-26",
-      "type": "지표",
-      "label": "미 GDP 2Q 잠정치",
-      "importance": "mid"
-    },
-    {
-      "date": "2026-08-26",
-      "type": "지표",
-      "label": "미 PCE 물가 (7월분)",
-      "importance": "mid"
-    },
     {
       "date": "2026-08-27",
       "type": "회의",
@@ -27,10 +8,24 @@
       "importance": "high"
     },
     {
+      "date": "2026-08-27",
+      "type": "실적",
+      "label": "엔비디아 실적",
+      "ticker": "NVDA",
+      "importance": "high"
+    },
+    {
       "date": "2026-09-04",
       "type": "지표",
       "label": "미 고용보고서 NFP (8월분)",
       "importance": "high"
+    },
+    {
+      "date": "2026-09-10",
+      "type": "실적",
+      "label": "오라클 실적",
+      "ticker": "ORCL",
+      "importance": "mid"
     }
   ]
 }
