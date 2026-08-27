@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-27T06:30:00+09:00",
+  "updated": "2026-08-28T06:30:05+09:00",
   "overall": {
     "red": 0,
     "warn": 1,
@@ -22,9 +22,9 @@
       "label": "IPO 붐",
       "state": "good",
       "emoji": "🟢",
-      "value": 9.9,
+      "value": 9.7,
       "unit": "%",
-      "caption": "IPO/S&P500 상대강도 6개월 +9.9% (기준 +20/+40)"
+      "caption": "IPO/S&P500 상대강도 6개월 +9.7% (기준 +20/+40)"
     },
     {
       "chart": "arkk_rs",

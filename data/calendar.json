@@ -1,19 +1,6 @@
 {
-  "updated": "2026-08-27T06:30:00+09:00",
+  "updated": "2026-08-28T06:30:05+09:00",
   "events": [
-    {
-      "date": "2026-08-27",
-      "type": "회의",
-      "label": "한은 금통위 (기준금리)",
-      "importance": "high"
-    },
-    {
-      "date": "2026-08-27",
-      "type": "실적",
-      "label": "엔비디아 실적",
-      "ticker": "NVDA",
-      "importance": "high"
-    },
     {
       "date": "2026-09-04",
       "type": "지표",
@@ -26,6 +13,12 @@
       "label": "오라클 실적",
       "ticker": "ORCL",
       "importance": "mid"
+    },
+    {
+      "date": "2026-09-11",
+      "type": "지표",
+      "label": "미 CPI (8월분)",
+      "importance": "high"
     }
   ]
 }
