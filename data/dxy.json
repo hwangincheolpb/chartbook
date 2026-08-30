@@ -5,15 +5,11 @@
   "subtitle": "US Dollar Index",
   "source": "Yahoo Finance",
   "unit": "index",
-  "updated": "2026-08-30T06:30:16+09:00",
+  "updated": "2026-08-31T06:30:10+09:00",
   "series": [
     {
       "name": "달러 인덱스",
       "data": [
-        [
-          "2020-08-21",
-          93.25
-        ],
         [
           "2020-08-24",
           93.3
