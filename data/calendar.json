@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-01T06:30:04+09:00",
+  "updated": "2026-09-02T06:30:02+09:00",
   "events": [
     {
       "date": "2026-09-04",
@@ -18,6 +18,12 @@
       "date": "2026-09-11",
       "type": "지표",
       "label": "미 CPI (8월분)",
+      "importance": "high"
+    },
+    {
+      "date": "2026-09-16",
+      "type": "회의",
+      "label": "FOMC 금리결정 (SEP)",
       "importance": "high"
     }
   ]
