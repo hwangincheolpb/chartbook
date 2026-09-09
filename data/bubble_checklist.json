@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-09T06:30:05+09:00",
+  "updated": "2026-09-10T06:30:05+09:00",
   "overall": {
     "red": 0,
     "warn": 1,
@@ -22,18 +22,18 @@
       "label": "IPO 붐",
       "state": "good",
       "emoji": "🟢",
-      "value": 10.8,
+      "value": 9.0,
       "unit": "%",
-      "caption": "IPO/S&P500 상대강도 6개월 +10.8% (기준 +20/+40)"
+      "caption": "IPO/S&P500 상대강도 6개월 +9.0% (기준 +20/+40)"
     },
     {
       "chart": "arkk_rs",
       "label": "투기 강세",
       "state": "good",
       "emoji": "🟢",
-      "value": 2,
+      "value": 0,
       "unit": "개월",
-      "caption": "ARKK/S&P500 월간 연속 아웃퍼폼 2개월 · 6개월 +2.6% (6개월↑=🟡 / 10개월↑+급등 40%↑=🔴)"
+      "caption": "ARKK/S&P500 월간 연속 아웃퍼폼 0개월 · 6개월 +3.0% (6개월↑=🟡 / 10개월↑+급등 40%↑=🔴)"
     },
     {
       "chart": "fed_funds",
