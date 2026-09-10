@@ -1,18 +1,18 @@
 {
-  "updated": "2026-09-10T06:30:05+09:00",
+  "updated": "2026-09-11T06:30:01+09:00",
   "events": [
-    {
-      "date": "2026-09-10",
-      "type": "실적",
-      "label": "오라클 실적",
-      "ticker": "ORCL",
-      "importance": "mid"
-    },
     {
       "date": "2026-09-11",
       "type": "지표",
       "label": "미 CPI (8월분)",
       "importance": "high"
+    },
+    {
+      "date": "2026-09-11",
+      "type": "실적",
+      "label": "오라클 실적",
+      "ticker": "ORCL",
+      "importance": "mid"
     },
     {
       "date": "2026-09-16",
