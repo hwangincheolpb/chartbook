@@ -1,11 +1,30 @@
 {
-  "updated": "2026-09-15T06:30:00+09:00",
+  "updated": "2026-09-16T06:30:01+09:00",
   "events": [
     {
       "date": "2026-09-16",
       "type": "회의",
       "label": "FOMC 금리결정 (SEP)",
       "importance": "high"
+    },
+    {
+      "date": "2026-09-30",
+      "type": "실적",
+      "label": "마이크론 실적",
+      "ticker": "MU",
+      "importance": "high"
+    },
+    {
+      "date": "2026-09-30",
+      "type": "지표",
+      "label": "미 GDP 2Q 확정치",
+      "importance": "mid"
+    },
+    {
+      "date": "2026-09-30",
+      "type": "지표",
+      "label": "미 PCE 물가 (8월분)",
+      "importance": "mid"
     }
   ]
 }
