@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-17T06:30:05+09:00",
+  "updated": "2026-09-18T06:30:05+09:00",
   "charts": [
     {
       "id": "sp500",
@@ -31,7 +31,7 @@
       "file": "kr_foreign_flow.json",
       "type": "timeseries",
       "section": "수급",
-      "ready": true,
+      "ready": false,
       "daily": true,
       "dailyOrder": 11
     },
@@ -48,7 +48,7 @@
       "file": "kr_fear_greed.json",
       "type": "timeseries",
       "section": "수급",
-      "ready": true,
+      "ready": false,
       "daily": false
     },
     {
