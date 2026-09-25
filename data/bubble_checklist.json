@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-25T06:30:00+09:00",
+  "updated": "2026-09-26T06:30:04+09:00",
   "overall": {
     "red": 0,
     "warn": 1,
@@ -22,9 +22,9 @@
       "label": "IPO 붐",
       "state": "good",
       "emoji": "🟢",
-      "value": 6.0,
+      "value": 7.0,
       "unit": "%",
-      "caption": "IPO/S&P500 상대강도 6개월 +6.0% (기준 +20/+40)"
+      "caption": "IPO/S&P500 상대강도 6개월 +7.0% (기준 +20/+40)"
     },
     {
       "chart": "arkk_rs",
@@ -33,7 +33,7 @@
       "emoji": "🟢",
       "value": 2,
       "unit": "개월",
-      "caption": "ARKK/S&P500 월간 연속 아웃퍼폼 2개월 · 6개월 +12.2% (6개월↑=🟡 / 10개월↑+급등 40%↑=🔴)"
+      "caption": "ARKK/S&P500 월간 연속 아웃퍼폼 2개월 · 6개월 +12.7% (6개월↑=🟡 / 10개월↑+급등 40%↑=🔴)"
     },
     {
       "chart": "fed_funds",
@@ -51,7 +51,7 @@
       "emoji": "🟢",
       "value": 13.24,
       "unit": "%",
-      "caption": "Capex YoY +12.6% · CP/GDP 13.24% — 마진 유지"
+      "caption": "Capex YoY +14.1% · CP/GDP 13.24% — 마진 유지"
     }
   ]
 }
