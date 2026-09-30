@@ -1,24 +1,12 @@
 {
-  "updated": "2026-09-30T06:30:01+09:00",
+  "updated": "2026-10-01T06:30:04+09:00",
   "events": [
     {
-      "date": "2026-09-30",
+      "date": "2026-10-01",
       "type": "실적",
       "label": "마이크론 실적",
       "ticker": "MU",
       "importance": "high"
-    },
-    {
-      "date": "2026-09-30",
-      "type": "지표",
-      "label": "미 GDP 2Q 확정치",
-      "importance": "mid"
-    },
-    {
-      "date": "2026-09-30",
-      "type": "지표",
-      "label": "미 PCE 물가 (8월분)",
-      "importance": "mid"
     },
     {
       "date": "2026-10-02",
@@ -30,6 +18,13 @@
       "date": "2026-10-14",
       "type": "지표",
       "label": "미 CPI (9월분)",
+      "importance": "high"
+    },
+    {
+      "date": "2026-10-15",
+      "type": "실적",
+      "label": "TSMC 실적",
+      "ticker": "TSM",
       "importance": "high"
     }
   ]
