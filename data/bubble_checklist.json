@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-01T06:30:04+09:00",
+  "updated": "2026-10-02T06:30:04+09:00",
   "overall": {
     "red": 0,
     "warn": 1,
@@ -22,27 +22,27 @@
       "label": "IPO 붐",
       "state": "good",
       "emoji": "🟢",
-      "value": 7.3,
+      "value": 8.0,
       "unit": "%",
-      "caption": "IPO/S&P500 상대강도 6개월 +7.3% (기준 +20/+40)"
+      "caption": "IPO/S&P500 상대강도 6개월 +8.0% (기준 +20/+40)"
     },
     {
       "chart": "arkk_rs",
       "label": "투기 강세",
       "state": "good",
       "emoji": "🟢",
-      "value": 2,
+      "value": 0,
       "unit": "개월",
-      "caption": "ARKK/S&P500 월간 연속 아웃퍼폼 2개월 · 6개월 +12.5% (6개월↑=🟡 / 10개월↑+급등 40%↑=🔴)"
+      "caption": "ARKK/S&P500 월간 연속 아웃퍼폼 0개월 · 6개월 +11.1% (6개월↑=🟡 / 10개월↑+급등 40%↑=🔴)"
     },
     {
       "chart": "fed_funds",
       "label": "긴축 전환",
       "state": "good",
       "emoji": "🟢",
-      "value": 3.63,
+      "value": 3.75,
       "unit": "%",
-      "caption": "FEDFUNDS 3.63% · 24개월 바닥 3.63% — 인하/동결 지속"
+      "caption": "FEDFUNDS 3.75% · 24개월 바닥 3.63% — 인하/동결 지속"
     },
     {
       "chart": "capex_margin",
